@@ -63,12 +63,12 @@ export default function Notebook() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto bg-[var(--color-paper-deep)] p-6 md:p-10">
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
-        <p className="font-hand text-2xl text-[var(--color-ink-soft)]">
+    <div className="h-screen overflow-y-auto desk-background p-4 md:p-6">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <p className="font-hand text-xl text-[var(--color-ink-soft)]">
           {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
         </p>
-        <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]">
+        <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]/90 backdrop-blur-sm">
           <button
             onClick={() => setHomeViewMode('flip')}
             className={`font-note text-sm px-3 py-1 rounded-full transition-colors ${
@@ -121,43 +121,46 @@ function FlipView({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex items-center gap-4 md:gap-8 w-full">
+      <div className="relative w-full max-w-6xl mx-auto h-[min(82vh,860px)]">
+        {/* ambient shadow grounding the book on the desk */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 -bottom-5 w-[85%] h-14 rounded-[50%] bg-black/25 blur-2xl pointer-events-none"
+          aria-hidden
+        />
+
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={page}
+            custom={direction}
+            initial={{ opacity: 0, x: direction * 60, rotate: direction * 4 }}
+            animate={{ opacity: 1, x: 0, rotate: 0 }}
+            exit={{ opacity: 0, x: -direction * 60, rotate: -direction * 4 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0"
+          >
+            {page === 'front' ? (
+              <NotepadPage fill ringCount={24}>
+                <FrontPage />
+              </NotepadPage>
+            ) : (
+              <NotepadPage fill ringCount={24} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
+                {renderFullContent(page)}
+              </NotepadPage>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
         <button
           onClick={() => go(-1)}
           aria-label="Previous page"
-          className="shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] hover:shadow-md transition-all flex items-center justify-center"
+          className="absolute left-1 md:-left-5 top-1/2 -translate-y-1/2 z-10 shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
         >
           ‹
         </button>
-
-        <div className="flex-1 w-full max-w-4xl mx-auto h-[min(75vh,720px)] relative overflow-visible">
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={page}
-              custom={direction}
-              initial={{ opacity: 0, x: direction * 60, rotate: direction * 4 }}
-              animate={{ opacity: 1, x: 0, rotate: 0 }}
-              exit={{ opacity: 0, x: -direction * 60, rotate: -direction * 4 }}
-              transition={{ duration: 0.25 }}
-              className="absolute inset-0"
-            >
-              {page === 'front' ? (
-                <NotepadPage fill ringCount={20}>
-                  <FrontPage />
-                </NotepadPage>
-              ) : (
-                <NotepadPage fill ringCount={20} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
-                  {renderFullContent(page)}
-                </NotepadPage>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
         <button
           onClick={() => go(1)}
           aria-label="Next page"
-          className="shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] hover:shadow-md transition-all flex items-center justify-center"
+          className="absolute right-1 md:-right-5 top-1/2 -translate-y-1/2 z-10 shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
         >
           ›
         </button>

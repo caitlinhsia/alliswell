@@ -120,6 +120,20 @@ body {
   background-position-y: 4px;
 }
 
+.desk-background {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(51, 41, 31, 0.025) 0px,
+      rgba(51, 41, 31, 0.025) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    radial-gradient(ellipse 90% 70% at 50% 26%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 140% 120% at 50% 50%, #f4ecd9 0%, #e7d8b0 45%, #cdb787 80%, #b9a476 100%);
+  background-attachment: fixed;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
