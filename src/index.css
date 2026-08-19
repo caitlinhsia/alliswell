@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Patrick+Hand&family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-hand: 'Caveat', cursive;
+  --font-note: 'Patrick Hand', cursive;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --color-paper: #faf6ec;
+  --color-paper-deep: #f2e9d8;
+  --color-paper-line: #e6dcc6;
+  --color-ink: #33291f;
+  --color-ink-soft: #6b5f4f;
+
+  --color-tab-sage: #93ab97;
+  --color-tab-sky: #8fb3d9;
+  --color-tab-blush: #e3a5a0;
+  --color-tab-butter: #e3c06a;
+  --color-tab-lavender: #b3a0d6;
+
+  --color-note-yellow: #fdf1a8;
+  --color-note-pink: #fbd4e3;
+  --color-note-blue: #cde6fb;
+  --color-note-green: #d8f0d0;
+  --color-note-orange: #fbdcae;
+  --color-note-purple: #e3d5fb;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-hand {
+  font-family: var(--font-hand);
+}
+
+.font-note {
+  font-family: var(--font-note);
+}
+
+/* subtle paper texture: faint dot grid */
+.paper-texture {
+  background-image: radial-gradient(var(--color-paper-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.lined-paper {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 30px,
+    var(--color-paper-line) 31px
+  );
+  background-position-y: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-paper-line);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
