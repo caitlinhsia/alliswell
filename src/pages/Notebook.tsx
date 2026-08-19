@@ -125,7 +125,7 @@ function FlipView({
         <button
           onClick={() => go(-1)}
           aria-label="Previous page"
-          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2 shrink-0"
+          className="shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] hover:shadow-md transition-all flex items-center justify-center"
         >
           ‹
         </button>
@@ -157,7 +157,7 @@ function FlipView({
         <button
           onClick={() => go(1)}
           aria-label="Next page"
-          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2 shrink-0"
+          className="shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] hover:shadow-md transition-all flex items-center justify-center"
         >
           ›
         </button>
