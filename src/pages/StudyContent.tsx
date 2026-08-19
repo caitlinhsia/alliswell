@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 import { todayStr } from '../lib/date';
 
 const DURATIONS = [15, 25, 45];
 
-export default function Study() {
+export default function StudyContent() {
   const subjects = useAppStore((s) => s.subjects);
   const addSubject = useAppStore((s) => s.addSubject);
   const removeSubject = useAppStore((s) => s.removeSubject);
@@ -67,8 +66,7 @@ export default function Study() {
   const recentSessions = [...studySessions].sort((a, b) => b.completedAt - a.completedAt).slice(0, 8);
 
   return (
-    <div className="p-4 md:p-8 h-full">
-      <NotepadPage fill ringCount={18} title="study" emoji="📚">
+    <>
       <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
         {todayMinutes} minutes focused today
       </p>
@@ -250,7 +248,6 @@ export default function Study() {
         )}
       </Panel>
       </div>
-      </NotepadPage>
-    </div>
+    </>
   );
 }

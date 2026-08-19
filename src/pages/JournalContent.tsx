@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
-import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { todayStr } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
@@ -17,7 +16,7 @@ const PROMPTS = [
   'What made you smile recently?',
 ];
 
-export default function Journal() {
+export default function JournalContent() {
   const journalEntries = useAppStore((s) => s.journalEntries);
   const upsertJournalEntry = useAppStore((s) => s.upsertJournalEntry);
   const removeJournalEntry = useAppStore((s) => s.removeJournalEntry);
@@ -41,8 +40,7 @@ export default function Journal() {
   const history = [...journalEntries].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="p-4 md:p-8 h-full">
-      <NotepadPage fill ringCount={18} title="journal" emoji="📝">
+    <>
       <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">A page for however today went</p>
 
       <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_260px] gap-5">
@@ -139,7 +137,6 @@ export default function Journal() {
           )}
         </Panel>
       </div>
-      </NotepadPage>
-    </div>
+    </>
   );
 }

@@ -59,7 +59,7 @@ export default function NotepadPage({
         }
         className={`relative bg-[#fffdf8] border-[3px] pt-7 px-5 pb-5 shadow-[5px_6px_0_rgba(51,41,31,0.10)] transition-colors ${
           dragOver ? 'border-[var(--color-tab-sky)]' : 'border-[var(--color-ink)]'
-        } ${fill ? 'w-full h-full flex flex-col' : ''} ${className}`}
+        } ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${className}`}
         style={{ borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px' }}
       >
         {onClose && (

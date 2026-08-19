@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
-import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { todayStr } from '../lib/date';
 
-export default function Schedule() {
+export default function ScheduleContent() {
   const schedule = useAppStore((s) => s.schedule);
   const addScheduleItem = useAppStore((s) => s.addScheduleItem);
   const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
@@ -35,8 +34,7 @@ export default function Schedule() {
   }
 
   return (
-    <div className="p-4 md:p-8 h-full">
-      <NotepadPage fill ringCount={18} title="schedule" emoji="🗓️">
+    <>
       <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">Plan your week gently</p>
 
       <Panel className="mb-6 shrink-0">
@@ -166,7 +164,6 @@ export default function Schedule() {
           );
         })}
       </div>
-      </NotepadPage>
-    </div>
+    </>
   );
 }

@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey } from '../store/useAppStore';
 import NotepadPage from '../components/NotepadPage';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
+import ScheduleContent from './ScheduleContent';
+import StudyContent from './StudyContent';
+import JournalContent from './JournalContent';
+import NotesBoard from './NotesBoard';
 import { todayStr, greeting } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
@@ -19,6 +22,19 @@ const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
 const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'study', 'journal', 'notes'];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1];
 
+function renderFullContent(key: DeskPageKey) {
+  switch (key) {
+    case 'schedule':
+      return <ScheduleContent />;
+    case 'study':
+      return <StudyContent />;
+    case 'journal':
+      return <JournalContent />;
+    case 'notes':
+      return <NotesBoard />;
+  }
+}
+
 function renderMini(key: DeskPageKey) {
   switch (key) {
     case 'schedule':
@@ -32,12 +48,22 @@ function renderMini(key: DeskPageKey) {
   }
 }
 
-export default function Dashboard() {
+export default function Notebook() {
   const homeViewMode = useAppStore((s) => s.homeViewMode);
   const setHomeViewMode = useAppStore((s) => s.setHomeViewMode);
+  const [flipIndex, setFlipIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  function goToPage(key: DeskPageKey) {
+    const idx = FLIP_ORDER.indexOf(key);
+    if (idx === -1) return;
+    setDirection(idx > flipIndex ? 1 : -1);
+    setFlipIndex(idx);
+    setHomeViewMode('flip');
+  }
 
   return (
-    <div className="p-6 md:p-10">
+    <div className="h-screen overflow-y-auto bg-[var(--color-paper-deep)] p-6 md:p-10">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
         <p className="font-hand text-2xl text-[var(--color-ink-soft)]">
           {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
@@ -66,33 +92,45 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {homeViewMode === 'flip' ? <FlipView /> : <DeskView />}
+      {homeViewMode === 'flip' ? (
+        <FlipView index={flipIndex} setIndex={setFlipIndex} direction={direction} setDirection={setDirection} />
+      ) : (
+        <DeskView onOpenFull={goToPage} />
+      )}
     </div>
   );
 }
 
-function FlipView() {
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
+function FlipView({
+  index,
+  setIndex,
+  direction,
+  setDirection,
+}: {
+  index: number;
+  setIndex: (i: number) => void;
+  direction: number;
+  setDirection: (d: number) => void;
+}) {
   const page = FLIP_ORDER[index];
 
   function go(delta: number) {
     setDirection(delta);
-    setIndex((i) => (i + delta + FLIP_ORDER.length) % FLIP_ORDER.length);
+    setIndex((index + delta + FLIP_ORDER.length) % FLIP_ORDER.length);
   }
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex items-center gap-4 md:gap-8">
+      <div className="flex items-center gap-4 md:gap-8 w-full">
         <button
           onClick={() => go(-1)}
           aria-label="Previous page"
-          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2"
+          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2 shrink-0"
         >
           ‹
         </button>
 
-        <div className="w-[min(90vw,42rem)] h-[min(70vh,640px)] relative overflow-visible">
+        <div className="flex-1 w-full max-w-4xl mx-auto h-[min(75vh,720px)] relative overflow-visible">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={page}
@@ -104,12 +142,12 @@ function FlipView() {
               className="absolute inset-0"
             >
               {page === 'front' ? (
-                <NotepadPage fill ringCount={14}>
+                <NotepadPage fill ringCount={20}>
                   <FrontPage />
                 </NotepadPage>
               ) : (
-                <NotepadPage fill ringCount={14} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
-                  {renderMini(page)}
+                <NotepadPage fill ringCount={20} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
+                  {renderFullContent(page)}
                 </NotepadPage>
               )}
             </motion.div>
@@ -119,13 +157,13 @@ function FlipView() {
         <button
           onClick={() => go(1)}
           aria-label="Next page"
-          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2"
+          className="font-hand text-4xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors px-2 shrink-0"
         >
           ›
         </button>
       </div>
 
-      <div className="flex gap-2 mt-8">
+      <div className="flex gap-2 mt-6">
         {FLIP_ORDER.map((p, i) => (
           <button
             key={p}
@@ -144,7 +182,7 @@ function FlipView() {
   );
 }
 
-function DeskView() {
+function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const deskGroups = useAppStore((s) => s.deskGroups);
   const openDeskPage = useAppStore((s) => s.openDeskPage);
   const closeDeskPage = useAppStore((s) => s.closeDeskPage);
@@ -198,6 +236,12 @@ function DeskView() {
               dragHandle={{ id: group[0], onDrop: (draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0]) }}
             >
               {renderMini(group[0])}
+              <button
+                onClick={() => onOpenFull(group[0])}
+                className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
+              >
+                open full page →
+              </button>
             </NotepadPage>
           ) : (
             <FoldOutSpread
@@ -216,6 +260,12 @@ function DeskView() {
                   onClose={() => closeDeskPage(key)}
                 >
                   {renderMini(key)}
+                  <button
+                    onClick={() => onOpenFull(key)}
+                    className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
+                  >
+                    open full page →
+                  </button>
                 </FoldPane>
               ))}
             </FoldOutSpread>
@@ -302,9 +352,6 @@ function MiniSchedule() {
           +
         </button>
       </form>
-      <Link to="/schedule" className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2">
-        open full week →
-      </Link>
     </div>
   );
 }
@@ -326,9 +373,6 @@ function MiniStudy() {
       <p className="font-note text-sm text-[var(--color-ink-soft)] mt-1">
         {subjects.length} subject{subjects.length === 1 ? '' : 's'} tracked
       </p>
-      <Link to="/study" className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-3">
-        open focus timer →
-      </Link>
     </div>
   );
 }
@@ -362,9 +406,6 @@ function MiniJournal() {
           feeling {moodMeta(todayEntry.mood).label.toLowerCase()}
         </p>
       )}
-      <Link to="/journal" className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2">
-        write more →
-      </Link>
     </div>
   );
 }
@@ -403,9 +444,6 @@ function MiniNotes() {
       >
         + quick note
       </button>
-      <Link to="/notes" className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2">
-        open corkboard →
-      </Link>
     </div>
   );
 }
