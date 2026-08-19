@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey } from '../store/useAppStore';
 import NotepadPage from '../components/NotepadPage';
+import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import { todayStr, greeting } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
@@ -17,6 +18,19 @@ const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
 
 const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'study', 'journal', 'notes'];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1];
+
+function renderMini(key: DeskPageKey) {
+  switch (key) {
+    case 'schedule':
+      return <MiniSchedule />;
+    case 'study':
+      return <MiniStudy />;
+    case 'journal':
+      return <MiniJournal />;
+    case 'notes':
+      return <MiniNotes />;
+  }
+}
 
 export default function Dashboard() {
   const homeViewMode = useAppStore((s) => s.homeViewMode);
@@ -78,7 +92,7 @@ function FlipView() {
           ‹
         </button>
 
-        <div className="w-72 md:w-80 h-[360px] relative overflow-visible">
+        <div className="w-[min(90vw,42rem)] h-[min(70vh,640px)] relative overflow-visible">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={page}
@@ -90,15 +104,12 @@ function FlipView() {
               className="absolute inset-0"
             >
               {page === 'front' ? (
-                <NotepadPage className="w-72 md:w-80">
+                <NotepadPage fill ringCount={14}>
                   <FrontPage />
                 </NotepadPage>
               ) : (
-                <NotepadPage title={PAGE_META[page].title} emoji={PAGE_META[page].emoji} className="w-72 md:w-80">
-                  {page === 'schedule' && <MiniSchedule />}
-                  {page === 'study' && <MiniStudy />}
-                  {page === 'journal' && <MiniJournal />}
-                  {page === 'notes' && <MiniNotes />}
+                <NotepadPage fill ringCount={14} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
+                  {renderMini(page)}
                 </NotepadPage>
               )}
             </motion.div>
@@ -134,45 +145,82 @@ function FlipView() {
 }
 
 function DeskView() {
-  const openDeskPages = useAppStore((s) => s.openDeskPages);
-  const toggleDeskPage = useAppStore((s) => s.toggleDeskPage);
+  const deskGroups = useAppStore((s) => s.deskGroups);
+  const openDeskPage = useAppStore((s) => s.openDeskPage);
+  const closeDeskPage = useAppStore((s) => s.closeDeskPage);
+  const mergeDeskPage = useAppStore((s) => s.mergeDeskPage);
+  const splitDeskPage = useAppStore((s) => s.splitDeskPage);
+
+  const openKeys = new Set(deskGroups.flat());
 
   return (
     <div>
-      <div className="flex gap-2 flex-wrap mb-8">
-        {(Object.keys(PAGE_META) as DeskPageKey[])
-          .filter((k) => !openDeskPages.includes(k))
-          .map((k) => (
-            <button
-              key={k}
-              onClick={() => toggleDeskPage(k)}
-              className="font-note text-sm px-3 py-1.5 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:bg-[var(--color-paper-deep)]"
-            >
-              + open {PAGE_META[k].title}
-            </button>
-          ))}
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
+        <div className="flex gap-2 flex-wrap">
+          {(Object.keys(PAGE_META) as DeskPageKey[])
+            .filter((k) => !openKeys.has(k))
+            .map((k) => (
+              <button
+                key={k}
+                onClick={() => openDeskPage(k)}
+                className="font-note text-sm px-3 py-1.5 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:bg-[var(--color-paper-deep)]"
+              >
+                + open {PAGE_META[k].title}
+              </button>
+            ))}
+        </div>
+        <p className="font-note text-xs text-[var(--color-ink-soft)]">
+          drag a page's dotted edge onto another to fold them together
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-start gap-x-10 gap-y-14">
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          const draggedId = e.dataTransfer.getData('text/plain');
+          if (draggedId) splitDeskPage(draggedId as DeskPageKey);
+        }}
+        className="flex flex-wrap items-start gap-x-10 gap-y-14 min-h-[50vh]"
+      >
         <NotepadPage rotate={-1.5} ringCount={6} className="w-64">
           <FrontPage />
         </NotepadPage>
 
-        {openDeskPages.map((key, i) => (
-          <NotepadPage
-            key={key}
-            title={PAGE_META[key].title}
-            emoji={PAGE_META[key].emoji}
-            rotate={ROTATIONS[i % ROTATIONS.length]}
-            onClose={() => toggleDeskPage(key)}
-            className="w-72"
-          >
-            {key === 'schedule' && <MiniSchedule />}
-            {key === 'study' && <MiniStudy />}
-            {key === 'journal' && <MiniJournal />}
-            {key === 'notes' && <MiniNotes />}
-          </NotepadPage>
-        ))}
+        {deskGroups.map((group, i) =>
+          group.length === 1 ? (
+            <NotepadPage
+              key={group[0]}
+              title={PAGE_META[group[0]].title}
+              emoji={PAGE_META[group[0]].emoji}
+              rotate={ROTATIONS[i % ROTATIONS.length]}
+              onClose={() => closeDeskPage(group[0])}
+              className="w-72"
+              dragHandle={{ id: group[0], onDrop: (draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0]) }}
+            >
+              {renderMini(group[0])}
+            </NotepadPage>
+          ) : (
+            <FoldOutSpread
+              key={group.join('-')}
+              rotate={ROTATIONS[i % ROTATIONS.length]}
+              ringCount={6 * group.length}
+              onDropInto={(draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0])}
+            >
+              {group.map((key, pi) => (
+                <FoldPane
+                  key={key}
+                  id={key}
+                  title={PAGE_META[key].title}
+                  emoji={PAGE_META[key].emoji}
+                  isFirst={pi === 0}
+                  onClose={() => closeDeskPage(key)}
+                >
+                  {renderMini(key)}
+                </FoldPane>
+              ))}
+            </FoldOutSpread>
+          )
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
-import PageHeader from '../components/PageHeader';
+import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { todayStr } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
@@ -41,12 +41,13 @@ export default function Journal() {
   const history = [...journalEntries].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      <PageHeader title="Journal" subtitle="A page for however today went" emoji="📝" />
+    <div className="p-4 md:p-8 h-full">
+      <NotepadPage fill ringCount={18} title="journal" emoji="📝">
+      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">A page for however today went</p>
 
-      <div className="grid md:grid-cols-[1fr_260px] gap-5">
-        <Panel>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_260px] gap-5">
+        <Panel className="flex flex-col h-full">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2 shrink-0">
             <input
               type="date"
               value={selectedDate}
@@ -74,7 +75,7 @@ export default function Journal() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 shrink-0">
             <p className="font-note text-sm italic text-[var(--color-ink-soft)]">
               Prompt: {PROMPTS[promptIndex]}
             </p>
@@ -91,11 +92,10 @@ export default function Journal() {
             onChange={(e) => setText(e.target.value)}
             onBlur={() => save(text, mood)}
             placeholder="Start writing..."
-            rows={14}
-            className="w-full font-note text-base lined-paper resize-none focus:outline-none px-1 leading-[31px] pt-1"
+            className="flex-1 w-full font-note text-base lined-paper resize-none focus:outline-none px-1 leading-[31px] pt-1"
           />
 
-          <div className="flex justify-end gap-2 mt-2">
+          <div className="flex justify-end gap-2 mt-2 shrink-0">
             {existing && (
               <button
                 onClick={() => {
@@ -116,12 +116,12 @@ export default function Journal() {
           </div>
         </Panel>
 
-        <Panel>
-          <h3 className="font-hand text-2xl mb-3">Past entries</h3>
+        <Panel className="flex flex-col h-full overflow-hidden">
+          <h3 className="font-hand text-2xl mb-3 shrink-0">Past entries</h3>
           {history.length === 0 ? (
             <p className="font-note text-sm text-[var(--color-ink-soft)]">Nothing written yet.</p>
           ) : (
-            <ul className="space-y-1.5 max-h-[500px] overflow-y-auto">
+            <ul className="space-y-1.5 flex-1 overflow-y-auto">
               {history.map((e) => (
                 <li key={e.id}>
                   <button
@@ -139,6 +139,7 @@ export default function Journal() {
           )}
         </Panel>
       </div>
+      </NotepadPage>
     </div>
   );
 }

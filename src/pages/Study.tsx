@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import PageHeader from '../components/PageHeader';
+import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 import { todayStr } from '../lib/date';
@@ -67,9 +67,13 @@ export default function Study() {
   const recentSessions = [...studySessions].sort((a, b) => b.completedAt - a.completedAt).slice(0, 8);
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      <PageHeader title="Study" subtitle={`${todayMinutes} minutes focused today`} emoji="📚" />
+    <div className="p-4 md:p-8 h-full">
+      <NotepadPage fill ringCount={18} title="study" emoji="📚">
+      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
+        {todayMinutes} minutes focused today
+      </p>
 
+      <div className="flex-1 overflow-y-auto -mx-1 px-1">
       <div className="grid md:grid-cols-2 gap-5">
         <Panel>
           <h3 className="font-hand text-2xl mb-3">Focus timer</h3>
@@ -245,6 +249,8 @@ export default function Study() {
           </ul>
         )}
       </Panel>
+      </div>
+      </NotepadPage>
     </div>
   );
 }

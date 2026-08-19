@@ -25,8 +25,11 @@ interface AppState {
   homeViewMode: HomeViewMode;
   setHomeViewMode: (mode: HomeViewMode) => void;
 
-  openDeskPages: DeskPageKey[];
-  toggleDeskPage: (key: DeskPageKey) => void;
+  deskGroups: DeskPageKey[][];
+  openDeskPage: (key: DeskPageKey) => void;
+  closeDeskPage: (key: DeskPageKey) => void;
+  mergeDeskPage: (draggedKey: DeskPageKey, targetKey: DeskPageKey) => void;
+  splitDeskPage: (key: DeskPageKey) => void;
 
   schedule: ScheduleItem[];
   addScheduleItem: (title: string, date: string, time: string | undefined, category: 'task' | 'event') => void;
@@ -65,13 +68,40 @@ export const useAppStore = create<AppState>()(
       homeViewMode: 'flip',
       setHomeViewMode: (mode) => set({ homeViewMode: mode }),
 
-      openDeskPages: ['schedule', 'notes'],
-      toggleDeskPage: (key) =>
+      deskGroups: [['schedule'], ['notes']],
+      openDeskPage: (key) =>
+        set((s) =>
+          s.deskGroups.some((g) => g.includes(key))
+            ? {}
+            : { deskGroups: [...s.deskGroups, [key]] }
+        ),
+      closeDeskPage: (key) =>
         set((s) => ({
-          openDeskPages: s.openDeskPages.includes(key)
-            ? s.openDeskPages.filter((k) => k !== key)
-            : [...s.openDeskPages, key],
+          deskGroups: s.deskGroups
+            .map((g) => g.filter((k) => k !== key))
+            .filter((g) => g.length > 0),
         })),
+      mergeDeskPage: (draggedKey, targetKey) =>
+        set((s) => {
+          if (draggedKey === targetKey) return {};
+          const withoutDragged = s.deskGroups
+            .map((g) => g.filter((k) => k !== draggedKey))
+            .filter((g) => g.length > 0);
+          const targetGroupIndex = withoutDragged.findIndex((g) => g.includes(targetKey));
+          if (targetGroupIndex === -1) return {};
+          return {
+            deskGroups: withoutDragged.map((g, i) =>
+              i === targetGroupIndex ? [...g, draggedKey] : g
+            ),
+          };
+        }),
+      splitDeskPage: (key) =>
+        set((s) => {
+          const withoutKey = s.deskGroups
+            .map((g) => g.filter((k) => k !== key))
+            .filter((g) => g.length > 0);
+          return { deskGroups: [...withoutKey, [key]] };
+        }),
 
       schedule: [],
       addScheduleItem: (title, date, time, category) =>

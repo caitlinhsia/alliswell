@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
-import PageHeader from '../components/PageHeader';
+import NotepadPage from '../components/NotepadPage';
 import Panel from '../components/Panel';
 import { todayStr } from '../lib/date';
 
@@ -35,10 +35,11 @@ export default function Schedule() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto">
-      <PageHeader title="Schedule" subtitle="Plan your week gently" emoji="🗓️" />
+    <div className="p-4 md:p-8 h-full">
+      <NotepadPage fill ringCount={18} title="schedule" emoji="🗓️">
+      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">Plan your week gently</p>
 
-      <Panel className="mb-6">
+      <Panel className="mb-6 shrink-0">
         <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label className="font-note text-xs text-[var(--color-ink-soft)]">What</label>
@@ -87,7 +88,7 @@ export default function Schedule() {
         </form>
       </Panel>
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 shrink-0">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
           className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
@@ -113,7 +114,7 @@ export default function Schedule() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+      <div className="flex-1 overflow-y-auto -mx-1 px-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 content-start">
         {days.map((day) => {
           const dayStr = format(day, 'yyyy-MM-dd');
           const items = schedule
@@ -165,6 +166,7 @@ export default function Schedule() {
           );
         })}
       </div>
+      </NotepadPage>
     </div>
   );
 }

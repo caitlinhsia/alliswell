@@ -8,7 +8,7 @@ import StickyNotes from './pages/StickyNotes';
 
 function App() {
   return (
-    <div className="h-screen flex flex-col md:flex-row paper-texture overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-[var(--color-paper-deep)] overflow-hidden">
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto">
         <Routes>
