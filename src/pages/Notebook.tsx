@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey } from '../store/useAppStore';
@@ -63,9 +63,9 @@ export default function Notebook() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto desk-background p-4 md:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-        <p className="font-hand text-xl text-[var(--color-ink-soft)]">
+    <div className="h-screen overflow-y-auto desk-background p-3 md:p-4">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <p className="font-hand text-lg text-[var(--color-ink-soft)]">
           {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
         </p>
         <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]/90 backdrop-blur-sm">
@@ -121,7 +121,7 @@ function FlipView({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-full max-w-6xl mx-auto h-[min(82vh,860px)]">
+      <div className="relative w-full max-w-[1600px] mx-auto h-[min(92vh,1000px)]">
         {/* ambient shadow grounding the book on the desk */}
         <div
           className="absolute left-1/2 -translate-x-1/2 -bottom-5 w-[85%] h-14 rounded-[50%] bg-black/25 blur-2xl pointer-events-none"
@@ -224,7 +224,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
         className="flex flex-wrap items-start gap-x-10 gap-y-14 min-h-[50vh]"
       >
         <NotepadPage rotate={-1.5} ringCount={6} className="w-64">
-          <FrontPage />
+          <FrontPage compact />
         </NotepadPage>
 
         {deskGroups.map((group, i) =>
@@ -279,27 +279,87 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   );
 }
 
-function FrontPage() {
+function FrontPage({ compact = false }: { compact?: boolean }) {
   const userName = useAppStore((s) => s.userName);
   const setUserName = useAppStore((s) => s.setUserName);
+  const journalEntries = useAppStore((s) => s.journalEntries);
+  const upsertJournalEntry = useAppStore((s) => s.upsertJournalEntry);
+
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const today = todayStr();
+  const todayEntry = journalEntries.find((e) => e.date === today);
 
   return (
-    <div>
-      <p className="font-hand text-4xl leading-tight text-[var(--color-ink)]">all is well</p>
-      <div className="font-hand text-2xl text-[var(--color-ink-soft)] mb-4 flex items-center gap-1.5">
-        with
-        <input
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          placeholder="your name"
-          size={Math.max(userName.length, 8)}
-          className="font-hand text-2xl bg-transparent border-b border-dashed border-[var(--color-ink-soft)]/50 focus:border-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)]/50"
-        />
+    <div
+      className={`flex flex-col items-center text-center ${
+        compact ? 'gap-4' : 'h-full justify-center gap-8'
+      }`}
+    >
+      <div>
+        <p
+          className={`font-hand leading-tight text-[var(--color-ink)] ${
+            compact ? 'text-4xl' : 'text-6xl md:text-7xl'
+          }`}
+        >
+          all is well
+        </p>
+        <div
+          className={`font-hand text-[var(--color-ink-soft)] flex items-center justify-center gap-2 mt-2 ${
+            compact ? 'text-xl' : 'text-3xl'
+          }`}
+        >
+          with
+          <input
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="your name"
+            size={Math.max(userName.length, 8)}
+            className={`font-hand bg-transparent border-b border-dashed border-[var(--color-ink-soft)]/50 focus:border-[var(--color-ink)] outline-none text-center placeholder:text-[var(--color-ink-soft)]/50 ${
+              compact ? 'text-xl' : 'text-3xl'
+            }`}
+          />
+        </div>
       </div>
-      <p className="font-note text-sm text-[var(--color-ink-soft)]">{format(new Date(), 'MMMM d, yyyy')}</p>
-      <p className="font-note text-xs text-[var(--color-ink-soft)] mt-4">
-        your notebook — flip through pages, or lay them all out together.
-      </p>
+
+      <div>
+        <p
+          className={`font-hand tabular-nums text-[var(--color-ink)] ${
+            compact ? 'text-3xl' : 'text-6xl md:text-7xl'
+          }`}
+        >
+          {format(now, 'h:mm')}
+          <span className={compact ? 'text-base text-[var(--color-ink-soft)]' : 'text-2xl md:text-3xl text-[var(--color-ink-soft)]'}>
+            {format(now, ' a')}
+          </span>
+        </p>
+        <p className={`font-note text-[var(--color-ink-soft)] mt-1 ${compact ? 'text-xs' : 'text-lg'}`}>
+          {format(now, compact ? 'MMM d, yyyy' : 'EEEE, MMMM d, yyyy')}
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        {MOODS.map((m) => (
+          <button
+            key={m.value}
+            onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
+            title={m.label}
+            className={`rounded-full border flex items-center justify-center transition-colors ${
+              compact ? 'text-lg w-8 h-8' : 'text-2xl w-12 h-12'
+            } ${
+              todayEntry?.mood === m.value
+                ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
+                : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
+            }`}
+          >
+            {m.emoji}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
