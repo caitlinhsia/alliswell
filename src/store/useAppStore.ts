@@ -16,8 +16,15 @@ function uid() {
 }
 
 export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes';
+export type HomeViewMode = 'flip' | 'desk';
 
 interface AppState {
+  userName: string;
+  setUserName: (name: string) => void;
+
+  homeViewMode: HomeViewMode;
+  setHomeViewMode: (mode: HomeViewMode) => void;
+
   openDeskPages: DeskPageKey[];
   toggleDeskPage: (key: DeskPageKey) => void;
 
@@ -52,6 +59,12 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      userName: 'Caitlin',
+      setUserName: (name) => set({ userName: name }),
+
+      homeViewMode: 'flip',
+      setHomeViewMode: (mode) => set({ homeViewMode: mode }),
+
       openDeskPages: ['schedule', 'notes'],
       toggleDeskPage: (key) =>
         set((s) => ({

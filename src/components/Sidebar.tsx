@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAppStore } from '../store/useAppStore';
 
 const NAV = [
   { to: '/', label: 'Home', color: 'var(--color-tab-lavender)', emoji: '🏠' },
@@ -9,13 +10,14 @@ const NAV = [
 ];
 
 export default function Sidebar() {
+  const userName = useAppStore((s) => s.userName);
   return (
     <nav className="flex md:flex-col shrink-0 md:w-52 border-b md:border-b-0 md:border-r border-[var(--color-paper-line)] bg-[var(--color-paper-deep)]/60">
       <div className="hidden md:block px-5 pt-6 pb-4">
         <h1 className="font-hand text-3xl leading-none text-[var(--color-ink)]">
           all is well
         </h1>
-        <p className="font-hand text-lg text-[var(--color-ink-soft)]">with Caitlin</p>
+        {userName && <p className="font-hand text-lg text-[var(--color-ink-soft)]">with {userName}</p>}
       </div>
       <ul className="flex md:flex-col flex-1 md:gap-1 md:px-3 md:pb-6">
         {NAV.map((item) => (
