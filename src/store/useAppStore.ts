@@ -17,6 +17,7 @@ function uid() {
 
 export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes';
 export type HomeViewMode = 'flip' | 'desk';
+export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes';
 
 interface AppState {
   userName: string;
@@ -24,6 +25,10 @@ interface AppState {
 
   homeViewMode: HomeViewMode;
   setHomeViewMode: (mode: HomeViewMode) => void;
+
+  frontPageWidgets: FrontWidgetKey[];
+  addFrontWidget: (key: FrontWidgetKey) => void;
+  removeFrontWidget: (key: FrontWidgetKey) => void;
 
   deskGroups: DeskPageKey[][];
   openDeskPage: (key: DeskPageKey) => void;
@@ -67,6 +72,16 @@ export const useAppStore = create<AppState>()(
 
       homeViewMode: 'flip',
       setHomeViewMode: (mode) => set({ homeViewMode: mode }),
+
+      frontPageWidgets: ['mood'],
+      addFrontWidget: (key) =>
+        set((s) =>
+          s.frontPageWidgets.includes(key)
+            ? {}
+            : { frontPageWidgets: [...s.frontPageWidgets, key] }
+        ),
+      removeFrontWidget: (key) =>
+        set((s) => ({ frontPageWidgets: s.frontPageWidgets.filter((k) => k !== key) })),
 
       deskGroups: [['schedule'], ['notes']],
       openDeskPage: (key) =>

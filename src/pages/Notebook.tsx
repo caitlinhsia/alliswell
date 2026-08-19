@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { useAppStore, type DeskPageKey } from '../store/useAppStore';
+import { useAppStore, type DeskPageKey, type FrontWidgetKey } from '../store/useAppStore';
 import NotepadPage from '../components/NotepadPage';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
@@ -21,6 +21,26 @@ const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
 
 const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'study', 'journal', 'notes'];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1];
+
+const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
+  mood: { label: 'Mood check-in', emoji: '🌤️' },
+  schedule: { label: "Today's schedule", emoji: '🗓️' },
+  study: { label: 'Study minutes', emoji: '📚' },
+  notes: { label: 'Sticky notes', emoji: '📌' },
+};
+
+function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
+  switch (key) {
+    case 'mood':
+      return <MoodWidget compact={compact} />;
+    case 'schedule':
+      return <MiniSchedule />;
+    case 'study':
+      return <MiniStudy />;
+    case 'notes':
+      return <MiniNotes />;
+  }
+}
 
 function renderFullContent(key: DeskPageKey) {
   switch (key) {
@@ -282,17 +302,20 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
 function FrontPage({ compact = false }: { compact?: boolean }) {
   const userName = useAppStore((s) => s.userName);
   const setUserName = useAppStore((s) => s.setUserName);
-  const journalEntries = useAppStore((s) => s.journalEntries);
-  const upsertJournalEntry = useAppStore((s) => s.upsertJournalEntry);
+  const frontPageWidgets = useAppStore((s) => s.frontPageWidgets);
+  const addFrontWidget = useAppStore((s) => s.addFrontWidget);
+  const removeFrontWidget = useAppStore((s) => s.removeFrontWidget);
 
   const [now, setNow] = useState(new Date());
+  const [pickerOpen, setPickerOpen] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const today = todayStr();
-  const todayEntry = journalEntries.find((e) => e.date === today);
+  const availableWidgets = (Object.keys(FRONT_WIDGET_META) as FrontWidgetKey[]).filter(
+    (k) => !frontPageWidgets.includes(k)
+  );
 
   return (
     <div
@@ -342,24 +365,84 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
         </p>
       </div>
 
-      <div className="flex gap-2">
-        {MOODS.map((m) => (
+      {frontPageWidgets.length > 0 && (
+        <div className="flex flex-wrap items-start justify-center gap-4">
+          {frontPageWidgets.map((key) => (
+            <div key={key} className="relative group">
+              {!compact && (
+                <button
+                  onClick={() => removeFrontWidget(key)}
+                  aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
+                  className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-xs text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity flex items-center justify-center"
+                >
+                  ×
+                </button>
+              )}
+              {renderFrontWidget(key, compact)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!compact && availableWidgets.length > 0 && (
+        <div className="relative">
           <button
-            key={m.value}
-            onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
-            title={m.label}
-            className={`rounded-full border flex items-center justify-center transition-colors ${
-              compact ? 'text-lg w-8 h-8' : 'text-2xl w-12 h-12'
-            } ${
-              todayEntry?.mood === m.value
-                ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
-                : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
-            }`}
+            onClick={() => setPickerOpen((o) => !o)}
+            aria-label="Add widget"
+            className="w-10 h-10 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink)] flex items-center justify-center text-xl leading-none transition-colors"
           >
-            {m.emoji}
+            +
           </button>
-        ))}
-      </div>
+          {pickerOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setPickerOpen(false)} />
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-lg p-2 flex flex-col gap-1 w-56">
+                {availableWidgets.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      addFrontWidget(key);
+                      setPickerOpen(false);
+                    }}
+                    className="font-note text-sm text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] flex items-center gap-2"
+                  >
+                    <span>{FRONT_WIDGET_META[key].emoji}</span>
+                    {FRONT_WIDGET_META[key].label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MoodWidget({ compact }: { compact: boolean }) {
+  const journalEntries = useAppStore((s) => s.journalEntries);
+  const upsertJournalEntry = useAppStore((s) => s.upsertJournalEntry);
+  const today = todayStr();
+  const todayEntry = journalEntries.find((e) => e.date === today);
+
+  return (
+    <div className="flex gap-2">
+      {MOODS.map((m) => (
+        <button
+          key={m.value}
+          onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
+          title={m.label}
+          className={`rounded-full border flex items-center justify-center transition-colors ${
+            compact ? 'text-lg w-8 h-8' : 'text-2xl w-12 h-12'
+          } ${
+            todayEntry?.mood === m.value
+              ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
+              : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
+          }`}
+        >
+          {m.emoji}
+        </button>
+      ))}
     </div>
   );
 }
