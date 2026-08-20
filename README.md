@@ -1,4 +1,4 @@
-# all is well
+# allisw3ll
 
 A cozy, all-in-one wellness notebook: scheduling, studying, journaling, and freeform sticky notes, styled like a modern paper notepad.
 

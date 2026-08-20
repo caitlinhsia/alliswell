@@ -329,7 +329,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
             compact ? 'text-4xl' : 'text-6xl md:text-7xl'
           }`}
         >
-          all is well
+          allisw3ll
         </p>
         <div
           className={`font-hand text-[var(--color-ink-soft)] flex items-center justify-center gap-2 mt-2 ${
