@@ -38,6 +38,7 @@ interface AppState {
 
   schedule: ScheduleItem[];
   addScheduleItem: (title: string, date: string, time: string | undefined, category: 'task' | 'event') => void;
+  updateScheduleItem: (id: string, patch: Partial<Pick<ScheduleItem, 'title' | 'time' | 'category'>>) => void;
   toggleScheduleItem: (id: string) => void;
   removeScheduleItem: (id: string) => void;
 
@@ -125,6 +126,10 @@ export const useAppStore = create<AppState>()(
             ...s.schedule,
             { id: uid(), title, date, time, category, done: false },
           ],
+        })),
+      updateScheduleItem: (id, patch) =>
+        set((s) => ({
+          schedule: s.schedule.map((i) => (i.id === id ? { ...i, ...patch } : i)),
         })),
       toggleScheduleItem: (id) =>
         set((s) => ({
