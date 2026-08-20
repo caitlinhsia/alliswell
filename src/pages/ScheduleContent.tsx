@@ -13,6 +13,7 @@ export default function ScheduleContent() {
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
 
   const [weekOffset, setWeekOffset] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(todayStr());
   const [time, setTime] = useState('');
@@ -38,6 +39,7 @@ export default function ScheduleContent() {
     addScheduleItem(title.trim(), date, time || undefined, category);
     setTitle('');
     setTime('');
+    setFormOpen(false);
   }
 
   function submitQuickAdd(dayStr: string) {
@@ -66,66 +68,85 @@ export default function ScheduleContent() {
         Click + on any day to add, click a task to rename it
       </p>
 
-      <Panel className="mb-6 shrink-0">
-        <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="font-note text-xs text-[var(--color-ink-soft)]">What</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Yoga, essay draft, dentist"
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-note text-xs text-[var(--color-ink-soft)]">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-note text-xs text-[var(--color-ink-soft)]">Time</label>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-note text-xs text-[var(--color-ink-soft)]">Type</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as 'task' | 'event')}
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
-            >
-              <option value="task">Task</option>
-              <option value="event">Event</option>
-            </select>
-          </div>
+      <div className="mb-4 shrink-0">
+        {formOpen ? (
+          <Panel>
+            <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">What</label>
+                <input
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Yoga, essay draft, dentist"
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">Time</label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">Type</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as 'task' | 'event')}
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                >
+                  <option value="task">Task</option>
+                  <option value="event">Event</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="font-note bg-[var(--color-tab-sky)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+              >
+                + Add
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="font-note text-sm text-[var(--color-ink-soft)] px-2 py-2 hover:text-[var(--color-ink)]"
+              >
+                cancel
+              </button>
+            </form>
+          </Panel>
+        ) : (
           <button
-            type="submit"
-            className="font-note bg-[var(--color-tab-sky)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+            onClick={() => setFormOpen(true)}
+            className="font-note text-sm px-3 py-1.5 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:bg-[var(--color-paper-deep)] hover:text-[var(--color-ink)]"
           >
-            + Add
+            + add with date, time, or event type
           </button>
-        </form>
-      </Panel>
+        )}
+      </div>
 
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <button
-          onClick={() => setWeekOffset((w) => w - 1)}
-          className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
-        >
-          ← prev
-        </button>
-        <p className="font-hand text-2xl">
+      <div className="mb-3 shrink-0">
+        <p className="font-hand text-2xl text-center mb-2">
           {format(weekStart, 'MMM d')} – {format(addDays(weekStart, 6), 'MMM d')}
         </p>
-        <div className="flex gap-2">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setWeekOffset((w) => w - 1)}
+            className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
+          >
+            ← prev
+          </button>
           <button
             onClick={() => setWeekOffset(0)}
             className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
@@ -141,7 +162,7 @@ export default function ScheduleContent() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto -mx-1 px-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 content-start">
+      <div className="flex-1 overflow-y-auto -mx-1 px-1 grid grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-3 content-start">
         {days.map((day) => {
           const dayStr = format(day, 'yyyy-MM-dd');
           const items = schedule
@@ -152,7 +173,7 @@ export default function ScheduleContent() {
           return (
             <div
               key={dayStr}
-              className={`rounded-2xl border p-3 min-h-[160px] flex flex-col ${
+              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] flex flex-col ${
                 isToday
                   ? 'border-[var(--color-tab-sky)] bg-[var(--color-paper)]'
                   : 'border-[var(--color-paper-line)] bg-[var(--color-paper)]/70'
@@ -213,7 +234,7 @@ export default function ScheduleContent() {
                     )}
                     <button
                       onClick={() => removeScheduleItem(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-[var(--color-ink-soft)] hover:text-red-500"
+                      className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0"
                       aria-label="Delete"
                     >
                       ×

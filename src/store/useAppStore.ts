@@ -48,6 +48,7 @@ interface AppState {
 
   studyTodos: StudyTodo[];
   addStudyTodo: (subjectId: string, text: string) => void;
+  updateStudyTodo: (id: string, text: string) => void;
   toggleStudyTodo: (id: string) => void;
   removeStudyTodo: (id: string) => void;
 
@@ -154,6 +155,10 @@ export const useAppStore = create<AppState>()(
       addStudyTodo: (subjectId, text) =>
         set((s) => ({
           studyTodos: [...s.studyTodos, { id: uid(), subjectId, text, done: false }],
+        })),
+      updateStudyTodo: (id, text) =>
+        set((s) => ({
+          studyTodos: s.studyTodos.map((t) => (t.id === id ? { ...t, text } : t)),
         })),
       toggleStudyTodo: (id) =>
         set((s) => ({

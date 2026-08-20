@@ -373,7 +373,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
                 <button
                   onClick={() => removeFrontWidget(key)}
                   aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
-                  className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-xs text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity flex items-center justify-center"
+                  className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-xs text-[var(--color-ink-soft)]/60 hover:text-red-500 transition-colors flex items-center justify-center"
                 >
                   ×
                 </button>

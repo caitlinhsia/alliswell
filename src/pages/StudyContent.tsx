@@ -12,6 +12,7 @@ export default function StudyContent() {
   const removeSubject = useAppStore((s) => s.removeSubject);
   const studyTodos = useAppStore((s) => s.studyTodos);
   const addStudyTodo = useAppStore((s) => s.addStudyTodo);
+  const updateStudyTodo = useAppStore((s) => s.updateStudyTodo);
   const toggleStudyTodo = useAppStore((s) => s.toggleStudyTodo);
   const removeStudyTodo = useAppStore((s) => s.removeStudyTodo);
   const studySessions = useAppStore((s) => s.studySessions);
@@ -20,6 +21,8 @@ export default function StudyContent() {
   const [activeSubjectId, setActiveSubjectId] = useState(subjects[0]?.id ?? '');
   const [newSubject, setNewSubject] = useState('');
   const [newTodo, setNewTodo] = useState('');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editTodoText, setEditTodoText] = useState('');
   const [duration, setDuration] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [running, setRunning] = useState(false);
@@ -206,19 +209,47 @@ export default function StudyContent() {
           </form>
           <ul className="space-y-1">
             {subjectTodos.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 font-note text-sm group">
+              <li key={t.id} className="flex items-center gap-2 font-note text-sm">
                 <input
                   type="checkbox"
                   checked={t.done}
                   onChange={() => toggleStudyTodo(t.id)}
                   className="accent-[var(--color-tab-sage)]"
                 />
-                <span className={`flex-1 ${t.done ? 'line-through text-[var(--color-ink-soft)]' : ''}`}>
-                  {t.text}
-                </span>
+                {editingTodoId === t.id ? (
+                  <input
+                    autoFocus
+                    value={editTodoText}
+                    onChange={(e) => setEditTodoText(e.target.value)}
+                    onBlur={() => {
+                      if (editTodoText.trim()) updateStudyTodo(t.id, editTodoText.trim());
+                      setEditingTodoId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editTodoText.trim()) updateStudyTodo(t.id, editTodoText.trim());
+                        setEditingTodoId(null);
+                      }
+                      if (e.key === 'Escape') setEditingTodoId(null);
+                    }}
+                    className="flex-1 font-note bg-transparent border-b border-dashed border-[var(--color-ink-soft)] outline-none min-w-0"
+                  />
+                ) : (
+                  <span
+                    onClick={() => {
+                      setEditingTodoId(t.id);
+                      setEditTodoText(t.text);
+                    }}
+                    className={`flex-1 cursor-text hover:underline decoration-dotted ${
+                      t.done ? 'line-through text-[var(--color-ink-soft)]' : ''
+                    }`}
+                  >
+                    {t.text}
+                  </span>
+                )}
                 <button
                   onClick={() => removeStudyTodo(t.id)}
-                  className="opacity-0 group-hover:opacity-100 text-[var(--color-ink-soft)] hover:text-red-500"
+                  className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0"
                 >
                   ×
                 </button>
