@@ -249,7 +249,7 @@ export default function StudyContent() {
                 )}
                 <button
                   onClick={() => removeStudyTodo(t.id)}
-                  className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0"
+                  className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
                 >
                   ×
                 </button>

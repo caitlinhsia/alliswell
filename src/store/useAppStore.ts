@@ -4,20 +4,22 @@ import type {
   JournalEntry,
   Mood,
   NoteColor,
+  Priority,
   ScheduleItem,
   StickyNote,
   StudySession,
   StudyTodo,
   Subject,
+  TodoItem,
 } from '../types';
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
-export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes';
+export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes' | 'todo';
 export type HomeViewMode = 'flip' | 'desk';
-export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes';
+export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo';
 
 interface AppState {
   userName: string;
@@ -41,6 +43,12 @@ interface AppState {
   updateScheduleItem: (id: string, patch: Partial<Pick<ScheduleItem, 'title' | 'time' | 'category'>>) => void;
   toggleScheduleItem: (id: string) => void;
   removeScheduleItem: (id: string) => void;
+
+  todos: TodoItem[];
+  addTodo: (text: string, priority: Priority, dueDate?: string) => void;
+  updateTodo: (id: string, patch: Partial<Pick<TodoItem, 'text' | 'priority' | 'dueDate'>>) => void;
+  toggleTodo: (id: string) => void;
+  removeTodo: (id: string) => void;
 
   subjects: Subject[];
   addSubject: (name: string, color: NoteColor) => void;
@@ -138,6 +146,25 @@ export const useAppStore = create<AppState>()(
         })),
       removeScheduleItem: (id) =>
         set((s) => ({ schedule: s.schedule.filter((i) => i.id !== id) })),
+
+      todos: [],
+      addTodo: (text, priority, dueDate) =>
+        set((s) => ({
+          todos: [
+            ...s.todos,
+            { id: uid(), text, priority, dueDate, done: false, createdAt: Date.now() },
+          ],
+        })),
+      updateTodo: (id, patch) =>
+        set((s) => ({
+          todos: s.todos.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+        })),
+      toggleTodo: (id) =>
+        set((s) => ({
+          todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+        })),
+      removeTodo: (id) =>
+        set((s) => ({ todos: s.todos.filter((t) => t.id !== id) })),
 
       subjects: [
         { id: 'default-1', name: 'General', color: 'blue' },

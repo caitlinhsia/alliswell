@@ -57,7 +57,7 @@ export default function StickyNoteItem({ note }: { note: StickyNote }) {
         <span className="text-[var(--color-ink-soft)] text-xs">⠿⠿</span>
         <button
           onClick={() => removeStickyNote(note.id)}
-          className="text-[var(--color-ink-soft)] hover:text-red-600 text-sm leading-none"
+          className="text-[var(--color-ink-soft)] hover:text-red-600 text-base leading-none px-2 py-2 -m-2"
           aria-label="Delete note"
         >
           ×

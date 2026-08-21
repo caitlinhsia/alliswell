@@ -49,3 +49,14 @@ export interface StickyNote {
   rotation: number;
   z: number;
 }
+
+export type Priority = 'high' | 'medium' | 'low';
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  priority: Priority;
+  dueDate?: string; // yyyy-MM-dd
+  done: boolean;
+  createdAt: number;
+}

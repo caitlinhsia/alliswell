@@ -66,7 +66,7 @@ export default function NotepadPage({
           <button
             onClick={onClose}
             aria-label="Close page"
-            className="absolute top-2 right-3 font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 text-lg leading-none"
+            className="absolute top-1 right-1 z-10 w-8 h-8 rounded-full font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 hover:bg-[var(--color-paper-deep)] text-lg leading-none flex items-center justify-center transition-colors"
           >
             ×
           </button>

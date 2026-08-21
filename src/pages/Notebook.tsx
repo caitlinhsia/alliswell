@@ -8,19 +8,21 @@ import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
 import JournalContent from './JournalContent';
 import NotesBoard from './NotesBoard';
+import TodoContent from './TodoContent';
 import { todayStr, greeting } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 
 const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
   schedule: { title: 'schedule', emoji: '🗓️' },
+  todo: { title: 'to-do', emoji: '✅' },
   study: { title: 'study', emoji: '📚' },
   journal: { title: 'journal', emoji: '📝' },
   notes: { title: 'notes', emoji: '📌' },
 };
 
-const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'study', 'journal', 'notes'];
-const ROTATIONS = [1.5, -1.5, 2, -2, 1];
+const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'todo', 'study', 'journal', 'notes'];
+const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1];
 
 const pageVariants = {
   enter: (dir: number) => ({ opacity: 0, x: dir * 60, rotate: dir * 4 }),
@@ -31,6 +33,7 @@ const pageVariants = {
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
   mood: { label: 'Mood check-in', emoji: '🌤️' },
   schedule: { label: "Today's schedule", emoji: '🗓️' },
+  todo: { label: 'To-do list', emoji: '✅' },
   study: { label: 'Study minutes', emoji: '📚' },
   notes: { label: 'Sticky notes', emoji: '📌' },
 };
@@ -41,6 +44,8 @@ function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
       return <MoodWidget compact={compact} />;
     case 'schedule':
       return <MiniSchedule />;
+    case 'todo':
+      return <MiniTodo />;
     case 'study':
       return <MiniStudy />;
     case 'notes':
@@ -52,6 +57,8 @@ function renderFullContent(key: DeskPageKey) {
   switch (key) {
     case 'schedule':
       return <ScheduleContent />;
+    case 'todo':
+      return <TodoContent />;
     case 'study':
       return <StudyContent />;
     case 'journal':
@@ -65,6 +72,8 @@ function renderMini(key: DeskPageKey) {
   switch (key) {
     case 'schedule':
       return <MiniSchedule />;
+    case 'todo':
+      return <MiniTodo />;
     case 'study':
       return <MiniStudy />;
     case 'journal':
@@ -385,7 +394,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
                 <button
                   onClick={() => removeFrontWidget(key)}
                   aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
-                  className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-xs text-[var(--color-ink-soft)]/60 hover:text-red-500 transition-colors flex items-center justify-center"
+                  className="absolute -top-3 -right-3 z-10 w-7 h-7 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-sm text-[var(--color-ink-soft)]/60 hover:text-red-500 transition-colors flex items-center justify-center"
                 >
                   ×
                 </button>
@@ -503,6 +512,70 @@ function MiniSchedule() {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          placeholder="quick add..."
+          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+        />
+        <button type="submit" className="font-note text-sm bg-[var(--color-tab-sky)] px-2.5 rounded-lg">
+          +
+        </button>
+      </form>
+    </div>
+  );
+}
+
+const MINI_PRIORITY_COLOR: Record<string, string> = {
+  high: 'var(--color-tab-blush)',
+  medium: 'var(--color-tab-butter)',
+  low: 'var(--color-tab-sage)',
+};
+
+function MiniTodo() {
+  const todos = useAppStore((s) => s.todos);
+  const addTodo = useAppStore((s) => s.addTodo);
+  const toggleTodo = useAppStore((s) => s.toggleTodo);
+  const [text, setText] = useState('');
+
+  const order = { high: 0, medium: 1, low: 2 } as const;
+  const items = [...todos]
+    .filter((t) => !t.done)
+    .sort((a, b) => order[a.priority] - order[b.priority] || (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))
+    .slice(0, 4);
+
+  return (
+    <div>
+      {items.length === 0 ? (
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing on your list.</p>
+      ) : (
+        <ul className="space-y-1.5 mb-2 max-h-40 overflow-y-auto">
+          {items.map((t) => (
+            <li key={t.id} className="flex items-center gap-2 font-note text-sm">
+              <input
+                type="checkbox"
+                checked={t.done}
+                onChange={() => toggleTodo(t.id)}
+                className="accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
+              />
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ background: MINI_PRIORITY_COLOR[t.priority] }}
+              />
+              <span className="truncate">{t.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!text.trim()) return;
+          addTodo(text.trim(), 'medium');
+          setText('');
+        }}
+        className="flex gap-1.5"
+      >
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           placeholder="quick add..."
           className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
         />

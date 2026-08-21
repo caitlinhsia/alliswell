@@ -3,7 +3,13 @@ import { addDays, format, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
 import { todayStr } from '../lib/date';
-import type { ScheduleItem } from '../types';
+import type { Priority, ScheduleItem } from '../types';
+
+const PRIORITY_DOT: Record<Priority, string> = {
+  high: 'var(--color-tab-blush)',
+  medium: 'var(--color-tab-butter)',
+  low: 'var(--color-tab-sage)',
+};
 
 export default function ScheduleContent() {
   const schedule = useAppStore((s) => s.schedule);
@@ -11,6 +17,8 @@ export default function ScheduleContent() {
   const updateScheduleItem = useAppStore((s) => s.updateScheduleItem);
   const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
+  const todos = useAppStore((s) => s.todos);
+  const toggleTodo = useAppStore((s) => s.toggleTodo);
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
@@ -168,6 +176,7 @@ export default function ScheduleContent() {
           const items = schedule
             .filter((i) => i.date === dayStr)
             .sort((a, b) => (a.time ?? '99:99').localeCompare(b.time ?? '99:99'));
+          const dayTodos = todos.filter((t) => t.dueDate === dayStr);
           const isToday = dayStr === todayStr();
           const isAdding = addingDate === dayStr;
           return (
@@ -191,7 +200,7 @@ export default function ScheduleContent() {
                       setQuickText('');
                     }}
                     aria-label={`Add to ${format(day, 'EEEE, MMM d')}`}
-                    className="w-5 h-5 rounded-full border border-dashed border-[var(--color-ink-soft)]/50 text-[var(--color-ink-soft)]/70 hover:text-[var(--color-ink)] hover:border-[var(--color-ink)] flex items-center justify-center text-xs leading-none transition-colors"
+                    className="w-7 h-7 -m-1 rounded-full border border-dashed border-[var(--color-ink-soft)]/50 text-[var(--color-ink-soft)]/70 hover:text-[var(--color-ink)] hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-sm leading-none transition-colors"
                   >
                     +
                   </button>
@@ -207,7 +216,7 @@ export default function ScheduleContent() {
                       type="checkbox"
                       checked={item.done}
                       onChange={() => toggleScheduleItem(item.id)}
-                      className="mt-0.5 accent-[var(--color-tab-sky)] w-3.5 h-3.5 shrink-0"
+                      className="mt-0.5 accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
                     />
                     {editingId === item.id ? (
                       <input
@@ -234,16 +243,34 @@ export default function ScheduleContent() {
                     )}
                     <button
                       onClick={() => removeScheduleItem(item.id)}
-                      className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0"
+                      className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
                       aria-label="Delete"
                     >
                       ×
                     </button>
                   </li>
                 ))}
+                {dayTodos.map((t) => (
+                  <li key={t.id} className="flex items-start gap-1.5 font-note text-xs leading-snug">
+                    <input
+                      type="checkbox"
+                      checked={t.done}
+                      onChange={() => toggleTodo(t.id)}
+                      className="mt-0.5 accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
+                    />
+                    <span
+                      className="mt-1 w-2 h-2 rounded-full shrink-0"
+                      style={{ background: PRIORITY_DOT[t.priority] }}
+                      title={`${t.priority} priority to-do`}
+                    />
+                    <span className={`flex-1 ${t.done ? 'line-through text-[var(--color-ink-soft)]' : ''}`}>
+                      {t.text}
+                    </span>
+                  </li>
+                ))}
                 {isAdding && (
                   <li className="flex items-center gap-1.5 font-note text-xs">
-                    <span className="w-3.5 h-3.5 shrink-0" />
+                    <span className="w-4 h-4 shrink-0" />
                     <input
                       autoFocus
                       value={quickText}
