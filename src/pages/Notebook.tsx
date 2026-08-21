@@ -22,6 +22,12 @@ const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
 const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'study', 'journal', 'notes'];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1];
 
+const pageVariants = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 60, rotate: dir * 4 }),
+  center: { opacity: 1, x: 0, rotate: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: -dir * 60, rotate: -dir * 4 }),
+};
+
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
   mood: { label: 'Mood check-in', emoji: '🌤️' },
   schedule: { label: "Today's schedule", emoji: '🗓️' },
@@ -152,9 +158,10 @@ function FlipView({
           <motion.div
             key={page}
             custom={direction}
-            initial={{ opacity: 0, x: direction * 60, rotate: direction * 4 }}
-            animate={{ opacity: 1, x: 0, rotate: 0 }}
-            exit={{ opacity: 0, x: -direction * 60, rotate: -direction * 4 }}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
             transition={{ duration: 0.25 }}
             className="absolute inset-0"
           >
@@ -320,7 +327,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
   return (
     <div
       className={`flex flex-col items-center text-center ${
-        compact ? 'gap-4' : 'h-full justify-center gap-8'
+        compact ? 'gap-4' : 'h-full pt-[8%] gap-8'
       }`}
     >
       <div>
@@ -368,7 +375,12 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       {frontPageWidgets.length > 0 && (
         <div className="flex flex-wrap items-start justify-center gap-4">
           {frontPageWidgets.map((key) => (
-            <div key={key} className="relative group">
+            <div
+              key={key}
+              className={`relative group ${
+                compact ? '' : 'border border-[var(--color-paper-line)] rounded-xl bg-[var(--color-paper)]/70 p-4'
+              }`}
+            >
               {!compact && (
                 <button
                   onClick={() => removeFrontWidget(key)}

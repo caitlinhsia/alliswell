@@ -173,7 +173,7 @@ export default function ScheduleContent() {
           return (
             <div
               key={dayStr}
-              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] flex flex-col ${
+              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col ${
                 isToday
                   ? 'border-[var(--color-tab-sky)] bg-[var(--color-paper)]'
                   : 'border-[var(--color-paper-line)] bg-[var(--color-paper)]/70'

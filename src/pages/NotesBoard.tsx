@@ -36,7 +36,7 @@ export default function NotesBoard() {
       </p>
       <div
         ref={boardRef}
-        className="relative flex-1 overflow-auto paper-texture bg-[var(--color-paper-deep)]/40 -mx-5 -mb-5"
+        className="relative flex-1 overflow-auto paper-texture bg-[var(--color-paper-deep)] -mx-5 -mb-5"
       >
         <div className="relative" style={{ width: 2400, height: 1600 }}>
           {stickyNotes.length === 0 && (
