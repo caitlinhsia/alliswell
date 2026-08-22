@@ -130,8 +130,8 @@ export default function Notebook() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto desk-background p-3 md:p-4">
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+    <div className="h-screen overflow-hidden desk-background p-3 md:p-4 flex flex-col">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-2 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={goToCover}
@@ -172,7 +172,9 @@ export default function Notebook() {
       {homeViewMode === 'flip' ? (
         <FlipView index={flipIndex} setIndex={setFlipIndex} direction={direction} setDirection={setDirection} />
       ) : (
-        <DeskView onOpenFull={goToPage} />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <DeskView onOpenFull={goToPage} />
+        </div>
       )}
     </div>
   );
@@ -197,9 +199,9 @@ function FlipView({
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex-1 min-h-0 flex flex-col items-center">
       <div
-        className="relative w-full max-w-[1600px] mx-auto h-[min(92vh,1000px)]"
+        className="relative w-full max-w-[1600px] mx-auto flex-1 min-h-0"
         style={{ perspective: '2200px', perspectiveOrigin: 'center top' }}
       >
         {/* ambient shadow grounding the book on the desk */}
@@ -236,7 +238,7 @@ function FlipView({
 
       </div>
 
-      <div className="flex items-center gap-4 mt-6">
+      <div className="flex items-center gap-4 mt-3 shrink-0">
         <button
           onClick={() => go(-1)}
           aria-label="Previous page"

@@ -110,7 +110,10 @@ interface AppState {
 
   mindMapNodes: MindMapNode[];
   addMindMapNode: (parentId: string | null, text: string, x: number, y: number, color: NoteColor) => string;
-  updateMindMapNode: (id: string, patch: Partial<Pick<MindMapNode, 'text' | 'x' | 'y' | 'color'>>) => void;
+  updateMindMapNode: (
+    id: string,
+    patch: Partial<Pick<MindMapNode, 'text' | 'x' | 'y' | 'color' | 'w' | 'h'>>
+  ) => void;
   removeMindMapNode: (id: string) => void;
 }
 

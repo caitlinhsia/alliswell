@@ -55,7 +55,15 @@ export interface JournalEntry {
   updatedAt: number;
 }
 
-export type StickyPage = 'board' | 'write' | 'schedule' | 'todo' | 'study' | 'journal' | 'front';
+export type StickyPage =
+  | 'board'
+  | 'write'
+  | 'mindmap'
+  | 'schedule'
+  | 'todo'
+  | 'study'
+  | 'journal'
+  | 'front';
 
 export interface StickyNote {
   id: string;
@@ -76,6 +84,8 @@ export interface MindMapNode {
   y: number;
   parentId: string | null;
   color: NoteColor;
+  w?: number;
+  h?: number;
 }
 
 export type Priority = 'high' | 'medium' | 'low';

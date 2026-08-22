@@ -20,7 +20,7 @@ export default function StickyLayer({ page }: { page: StickyPage }) {
 
   return (
     <>
-      <div className="absolute inset-0 pointer-events-none z-20">
+      <div data-no-pan className="absolute inset-0 pointer-events-none z-20">
         {notes.map((note) => (
           <div key={note.id} className="pointer-events-auto">
             <StickyNoteItem
@@ -33,7 +33,7 @@ export default function StickyLayer({ page }: { page: StickyPage }) {
         ))}
       </div>
 
-      <div className="absolute bottom-3 right-3 z-30">
+      <div data-no-pan className="absolute bottom-3 right-3 z-30">
         {pickerOpen && (
           <>
             <span className="fixed inset-0 z-30" onClick={() => setPickerOpen(false)} />
