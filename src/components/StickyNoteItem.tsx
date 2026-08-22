@@ -71,9 +71,9 @@ export default function StickyNoteItem({
             onPointerDown={(e) => e.stopPropagation()}
             aria-label={mode === 'text' ? 'Switch to drawing' : 'Switch to text'}
             title={mode === 'text' ? 'Draw' : 'Write'}
-            className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] text-xs leading-none px-1.5 py-1.5 -m-1.5"
+            className="font-note text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] leading-none px-1.5 py-1.5 -m-1.5"
           >
-            {mode === 'text' ? '✎' : 'Aa'}
+            {mode === 'text' ? 'draw' : 'text'}
           </button>
           <button
             onClick={() => onRemove(note.id)}

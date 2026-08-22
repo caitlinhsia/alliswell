@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 import ColorPicker from './ColorPicker';
@@ -19,6 +19,44 @@ export default function MindMap() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+
+  const journalEntries = useAppStore((s) => s.journalEntries);
+  const stickyNotes = useAppStore((s) => s.stickyNotes);
+  const todos = useAppStore((s) => s.todos);
+  const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
+
+  // everything already written elsewhere in the notebook, offered for reuse here
+  const library = useMemo(() => {
+    const trim = (s: string, n = 70) =>
+      s.replace(/\s+/g, ' ').trim().slice(0, n) + (s.trim().length > n ? '…' : '');
+
+    const groups: { label: string; items: string[] }[] = [];
+
+    const notes = stickyNotes.map((n) => n.text).filter((t) => t.trim());
+    if (notes.length) groups.push({ label: 'sticky notes', items: notes.map((t) => trim(t)) });
+
+    const open = todos.filter((t) => !t.done).map((t) => t.text);
+    if (open.length) groups.push({ label: 'to-dos', items: open.map((t) => trim(t)) });
+
+    const entries = [...journalEntries]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 8)
+      .map((e) => trim(e.text))
+      .filter(Boolean);
+    if (entries.length) groups.push({ label: 'journal', items: entries });
+
+    const lines = writeNoteHtml
+      .replace(/<(li|div|p|br)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 1)
+      .slice(0, 10);
+    if (lines.length) groups.push({ label: 'notes page', items: lines.map((l) => trim(l)) });
+
+    return groups;
+  }, [stickyNotes, todos, journalEntries, writeNoteHtml]);
 
   const panRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
   const dragNodeRef = useRef<{
@@ -82,6 +120,27 @@ export default function MindMap() {
     setSelectedId(id);
     setEditingId(id);
     setEditText('idea');
+  }
+
+  /** Drop a line of existing writing onto the canvas as its own bubble. */
+  function pasteFromLibrary(text: string) {
+    const parent = nodes.find((n) => n.id === selectedId) ?? root;
+    const color = NOTE_COLOR_LIST[nodes.length % NOTE_COLOR_LIST.length];
+    if (parent) {
+      const siblings = nodes.filter((n) => n.parentId === parent.id).length;
+      const angle = (siblings * 0.9 + 0.4) % (Math.PI * 2);
+      const dist = 175 + siblings * 8;
+      const id = addNode(
+        parent.id,
+        text,
+        parent.x + Math.cos(angle) * dist,
+        parent.y + Math.sin(angle) * dist,
+        color
+      );
+      setSelectedId(id);
+    } else {
+      setSelectedId(addNode(null, text, 0, 0, color));
+    }
   }
 
   function handleBgPointerDown(e: React.PointerEvent) {
@@ -304,6 +363,51 @@ export default function MindMap() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {root && (
+          <div data-no-pan className="absolute top-3 right-3 z-30">
+            <button
+              onClick={() => setLibraryOpen((o) => !o)}
+              className="font-note text-xs px-3 py-1.5 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] shadow-sm hover:border-[var(--color-ink-soft)] transition-colors"
+            >
+              {libraryOpen ? 'close notes' : 'previous notes'}
+            </button>
+
+            {libraryOpen && (
+              <div className="absolute right-0 top-10 w-72 max-h-[320px] overflow-y-auto bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-xl p-2">
+                <p className="font-note text-[11px] text-[var(--color-ink-soft)] px-1.5 pb-1.5">
+                  {selectedId
+                    ? 'click one to branch it off the selected bubble'
+                    : 'click one to drop it on the canvas'}
+                </p>
+                {library.length === 0 ? (
+                  <p className="font-note text-xs text-[var(--color-ink-soft)] px-1.5 py-2">
+                    Nothing written elsewhere yet — journal entries, sticky notes and to-dos show up
+                    here.
+                  </p>
+                ) : (
+                  library.map((group) => (
+                    <div key={group.label} className="mb-2 last:mb-0">
+                      <p className="font-note text-[10px] uppercase tracking-wide text-[var(--color-ink-soft)]/70 px-1.5 mb-0.5">
+                        {group.label}
+                      </p>
+                      {group.items.map((entry, i) => (
+                        <button
+                          key={group.label + i}
+                          onClick={() => pasteFromLibrary(entry)}
+                          className="w-full text-left font-note text-xs px-1.5 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] truncate"
+                          title={entry}
+                        >
+                          {entry}
+                        </button>
+                      ))}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
 

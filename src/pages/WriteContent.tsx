@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import StickyNoteItem from '../components/StickyNoteItem';
 import MindMap from '../components/MindMap';
+import Icon from '../components/Icon';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 
 type Tab = 'write' | 'mindmap';
@@ -62,7 +63,7 @@ export default function WriteContent() {
               tab === 'write' ? 'bg-[var(--color-tab-lavender)] text-[var(--color-ink)]' : 'text-[var(--color-ink-soft)]'
             }`}
           >
-            ✍️ write
+            <Icon name="pen" /> write
           </button>
           <button
             onClick={() => setTab('mindmap')}
@@ -70,11 +71,11 @@ export default function WriteContent() {
               tab === 'mindmap' ? 'bg-[var(--color-tab-lavender)] text-[var(--color-ink)]' : 'text-[var(--color-ink-soft)]'
             }`}
           >
-            🧠 mind map
+            <Icon name="mindmap" /> mind map
           </button>
         </div>
         {tab === 'write' && (
-          <span className="font-note text-xs text-[var(--color-ink-soft)]">{justSaved ? '✓ saved' : ''}</span>
+          <span className="font-note text-xs text-[var(--color-ink-soft)]">{justSaved ? 'saved' : ''}</span>
         )}
       </div>
 
@@ -84,7 +85,12 @@ export default function WriteContent() {
             <ToolBtn label="B" title="Bold" onClick={() => exec('bold')} className="font-bold" />
             <ToolBtn label="I" title="Italic" onClick={() => exec('italic')} className="italic" />
             <ToolBtn label="U" title="Underline" onClick={() => exec('underline')} className="underline" />
-            <ToolBtn label="✎" title="Highlight" onClick={() => exec('hiliteColor', '#ecdfa8')} />
+            <ToolBtn
+              label="H"
+              title="Highlight"
+              onClick={() => exec('hiliteColor', 'var(--color-note-ochre)')}
+              className="bg-[var(--color-note-ochre)]/45"
+            />
             <ToolBtn label="•⁠—" title="Bullet list" onClick={() => exec('insertUnorderedList')} />
             <span className="w-px h-5 bg-[var(--color-paper-line)] mx-1" />
             <span className="font-note text-xs text-[var(--color-ink-soft)] mr-1">sticky:</span>

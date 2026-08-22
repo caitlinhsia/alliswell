@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SpiralRings from './SpiralRings';
+import Icon, { type IconName } from './Icon';
 
 export interface DragHandle {
   id: string;
@@ -9,7 +10,7 @@ export interface DragHandle {
 
 export default function NotepadPage({
   title,
-  emoji,
+  icon,
   rotate = 0,
   onClose,
   children,
@@ -17,10 +18,11 @@ export default function NotepadPage({
   ringCount = 8,
   fill = false,
   dragHandle,
-  resizable = false,
+  size,
+  onResize,
 }: {
   title?: string;
-  emoji?: string;
+  icon?: IconName;
   rotate?: number;
   onClose?: () => void;
   children: ReactNode;
@@ -28,9 +30,38 @@ export default function NotepadPage({
   ringCount?: number;
   fill?: boolean;
   dragHandle?: DragHandle;
-  resizable?: boolean;
+  size?: { w: number; h: number };
+  onResize?: (size: { w: number; h: number }) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
+  const resizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  function onResizeDown(e: React.PointerEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = boxRef.current?.getBoundingClientRect();
+    resizeRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      w: size?.w ?? rect?.width ?? 288,
+      h: size?.h ?? rect?.height ?? 320,
+    };
+  }
+
+  function onResizeMove(e: React.PointerEvent) {
+    const r = resizeRef.current;
+    if (!r || !onResize) return;
+    onResize({
+      w: Math.max(200, r.w + (e.clientX - r.x)),
+      h: Math.max(180, r.h + (e.clientY - r.y)),
+    });
+  }
+
+  function onResizeUp() {
+    resizeRef.current = null;
+  }
 
   return (
     <div
@@ -62,11 +93,12 @@ export default function NotepadPage({
         className={`relative bg-[#fffdf8] border-[3px] pt-7 px-5 pb-5 shadow-[5px_6px_0_rgba(51,41,31,0.10)] transition-colors ${
           dragOver ? 'border-[var(--color-tab-sky)]' : 'border-[var(--color-ink)]'
         } ${fill ? 'w-full h-full flex flex-col overflow-hidden lined-paper' : ''} ${
-          resizable ? 'overflow-auto resize' : ''
+          onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
+        ref={boxRef}
         style={{
           borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px',
-          ...(resizable ? { minWidth: 220, minHeight: 200, height: 320 } : {}),
+          ...(onResize ? { width: size?.w ?? 288, height: size?.h ?? 320 } : {}),
         }}
       >
         {/* perforation: the tear-off strip sits flush under the rings */}
@@ -104,15 +136,21 @@ export default function NotepadPage({
           </button>
         )}
 
-        {resizable && (
+        {onResize && (
           <span
-            aria-hidden
-            className="absolute bottom-0.5 right-0.5 w-3 h-3 pointer-events-none border-b-2 border-r-2 border-[var(--color-ink-soft)]/35 rounded-br"
-          />
+            onPointerDown={onResizeDown}
+            onPointerMove={onResizeMove}
+            onPointerUp={onResizeUp}
+            onPointerCancel={onResizeUp}
+            title="Drag to resize"
+            className="absolute bottom-0 right-0 z-30 w-5 h-5 cursor-nwse-resize touch-none flex items-end justify-end p-[3px]"
+          >
+            <span className="w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--color-ink-soft)]/50 rounded-br-sm" />
+          </span>
         )}
         {title && (
-          <h2 className="font-sans font-extrabold text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
-            {emoji && <span>{emoji}</span>}
+          <h2 className="font-sans font-semibold tracking-tight text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
+            {icon && <Icon name={icon} size={19} className="text-[var(--color-ink-soft)]" />}
             {title}
           </h2>
         )}

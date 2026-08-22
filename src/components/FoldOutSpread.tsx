@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SpiralRings from './SpiralRings';
+import Icon, { type IconName } from './Icon';
 
 export default function FoldOutSpread({
   rotate = 0,
@@ -45,24 +46,48 @@ export default function FoldOutSpread({
 export function FoldPane({
   id,
   title,
-  emoji,
+  icon,
   isFirst,
   onClose,
+  size,
+  onResize,
   children,
 }: {
   id: string;
   title: string;
-  emoji: string;
+  icon: IconName;
   isFirst: boolean;
   onClose: () => void;
+  size?: { w: number; h: number };
+  onResize?: (size: { w: number; h: number }) => void;
   children: ReactNode;
 }) {
+  const resizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  function onResizeDown(e: React.PointerEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    resizeRef.current = { x: e.clientX, y: e.clientY, w: size?.w ?? 256, h: size?.h ?? 320 };
+  }
+  function onResizeMove(e: React.PointerEvent) {
+    const r = resizeRef.current;
+    if (!r || !onResize) return;
+    onResize({
+      w: Math.max(190, r.w + (e.clientX - r.x)),
+      h: Math.max(180, r.h + (e.clientY - r.y)),
+    });
+  }
+  function onResizeUp() {
+    resizeRef.current = null;
+  }
+
   return (
     <div
-      className={`relative w-64 pt-7 px-5 pb-5 resize-x overflow-auto ${
+      className={`relative pt-7 px-5 pb-5 overflow-hidden flex flex-col ${
         !isFirst ? 'border-l-2 border-dashed border-[var(--color-paper-line)]' : ''
       }`}
-      style={{ minWidth: 200, minHeight: 220 }}
+      style={{ width: size?.w ?? 256, height: size?.h ?? 320 }}
     >
       <div
         draggable
@@ -85,11 +110,24 @@ export function FoldPane({
       >
         ×
       </button>
-      <h2 className="font-sans font-extrabold text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
-        <span>{emoji}</span>
+      <h2 className="font-sans font-semibold tracking-tight text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
+        <Icon name={icon} size={19} className="text-[var(--color-ink-soft)]" />
         {title}
       </h2>
-      {children}
+      <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+
+      {onResize && (
+        <span
+          onPointerDown={onResizeDown}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeUp}
+          onPointerCancel={onResizeUp}
+          title="Drag to resize"
+          className="absolute bottom-0 right-0 z-30 w-5 h-5 cursor-nwse-resize touch-none flex items-end justify-end p-[3px]"
+        >
+          <span className="w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--color-ink-soft)]/50 rounded-br-sm" />
+        </span>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
+import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import type { Mood } from '../types';
@@ -65,11 +66,10 @@ export default function JournalContent() {
       <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_260px] gap-5">
         <Panel className="flex flex-col h-full">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2 shrink-0">
-            <input
-              type="date"
+            <DateField
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-1.5"
+              onChange={(v) => setSelectedDate(v ?? todayStr())}
+              allowClear={false}
             />
             <div className="flex gap-1.5">
               {MOODS.map((m) => (
@@ -80,13 +80,15 @@ export default function JournalContent() {
                     save(text, m.value);
                   }}
                   title={m.label}
-                  className={`text-lg w-8 h-8 rounded-full border flex items-center justify-center ${
+                  className={`font-note text-xs px-2.5 h-8 rounded-full border flex items-center gap-1.5 transition-colors ${
                     mood === m.value
-                      ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
-                      : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
+                      ? 'border-[var(--color-ink)]'
+                      : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
                   }`}
+                  style={mood === m.value ? { background: m.tone } : undefined}
                 >
-                  {m.emoji}
+                  <span className="text-sm leading-none">{m.mark}</span>
+                  {m.label}
                 </button>
               ))}
             </div>
@@ -117,7 +119,7 @@ export default function JournalContent() {
 
           <div className="flex items-center justify-end gap-2 mt-2 shrink-0">
             <span className="font-note text-xs text-[var(--color-ink-soft)] mr-auto">
-              {dirty ? 'saving…' : justSaved ? '✓ saved' : ''}
+              {dirty ? 'saving…' : justSaved ? 'saved' : ''}
             </span>
             {existing && (
               <button
@@ -153,7 +155,7 @@ export default function JournalContent() {
                       e.date === selectedDate ? 'bg-[var(--color-paper-deep)]' : 'hover:bg-[var(--color-paper-deep)]/50'
                     }`}
                   >
-                    <span>{moodMeta(e.mood).emoji}</span>
+                    <span className="text-sm leading-none w-3 text-center">{moodMeta(e.mood).mark}</span>
                     <span>{format(parseISO(e.date), 'MMM d, yyyy')}</span>
                   </button>
                 </li>

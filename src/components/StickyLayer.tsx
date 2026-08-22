@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import StickyNoteItem from './StickyNoteItem';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
+import Icon from './Icon';
 import type { StickyPage } from '../types';
 
 /**
@@ -58,9 +59,9 @@ export default function StickyLayer({ page }: { page: StickyPage }) {
           onClick={() => setPickerOpen((o) => !o)}
           aria-label="Add sticky note to this page"
           title="Add a sticky note"
-          className="w-11 h-11 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] shadow-md hover:shadow-lg hover:border-[var(--color-ink-soft)] transition-all flex items-center justify-center text-lg"
+          className="w-11 h-11 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] shadow-md hover:shadow-lg hover:border-[var(--color-ink-soft)] transition-all flex items-center justify-center text-[var(--color-ink-soft)]"
         >
-          🗒️
+          <Icon name="sticky" size={19} />
         </button>
       </div>
     </>

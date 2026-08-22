@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useMemo, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
+import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
+import { parseTodoInput } from '../lib/parseTodo';
 import type { Priority, TodoItem } from '../types';
 
 const PRIORITY_META: Record<Priority, { label: string; color: string }> = {
-  high: { label: 'High', color: 'var(--color-tab-blush)' },
-  medium: { label: 'Medium', color: 'var(--color-tab-butter)' },
-  low: { label: 'Low', color: 'var(--color-tab-sage)' },
+  high: { label: 'High', color: 'var(--color-note-rust)' },
+  medium: { label: 'Medium', color: 'var(--color-note-ochre)' },
+  low: { label: 'Low', color: 'var(--color-note-sage)' },
 };
 const PRIORITY_ORDER: Priority[] = ['high', 'medium', 'low'];
 
@@ -36,18 +37,21 @@ export default function TodoContent() {
   const removeTodo = useAppStore((s) => s.removeTodo);
 
   const [text, setText] = useState('');
-  const [priority, setPriority] = useState<Priority>('medium');
-  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState<Priority | null>(null);
+  const [dueDate, setDueDate] = useState<string | undefined>();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+
+  // live read of what the typed line will become
+  const parsed = useMemo(() => parseTodoInput(text), [text]);
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
-    addTodo(text.trim(), priority, dueDate || undefined);
+    addTodo(parsed.text, priority ?? parsed.priority ?? 'medium', dueDate ?? parsed.dueDate);
     setText('');
-    setDueDate('');
+    setPriority(null);
+    setDueDate(undefined);
   }
 
   function startEdit(t: TodoItem) {
@@ -62,22 +66,24 @@ export default function TodoContent() {
 
   const today = todayStr();
   const sorted = sortTodos(todos);
+  const effPriority = priority ?? parsed.priority ?? 'medium';
+  const effDue = dueDate ?? parsed.dueDate;
 
   return (
     <>
       <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
-        Priorities and dates, all in one list
+        Type it plainly — "essay draft p1 mon" sets the priority and the day for you
       </p>
 
       <Panel className="mb-6 shrink-0">
         <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
             <label className="font-note text-xs text-[var(--color-ink-soft)]">What</label>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="e.g. Finish essay draft"
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+              placeholder="e.g. finish essay draft p1 mon"
+              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -87,11 +93,11 @@ export default function TodoContent() {
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setPriority(p)}
+                  onClick={() => setPriority(priority === p ? null : p)}
                   className="font-note text-sm px-3 py-2 rounded-lg border transition-colors"
                   style={{
-                    background: priority === p ? PRIORITY_META[p].color : 'transparent',
-                    borderColor: priority === p ? PRIORITY_META[p].color : 'var(--color-paper-line)',
+                    background: effPriority === p ? PRIORITY_META[p].color : 'transparent',
+                    borderColor: effPriority === p ? PRIORITY_META[p].color : 'var(--color-paper-line)',
                   }}
                 >
                   {PRIORITY_META[p].label}
@@ -101,20 +107,23 @@ export default function TodoContent() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="font-note text-xs text-[var(--color-ink-soft)]">Due date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
-            />
+            <DateField value={effDue} onChange={setDueDate} placeholder="pick a date" />
           </div>
           <button
             type="submit"
-            className="font-note bg-[var(--color-tab-sky)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+            className="font-note bg-[var(--color-note-denim)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
           >
-            + Add
+            Add
           </button>
         </form>
+
+        {parsed.matched.length > 0 && (
+          <p className="font-note text-xs text-[var(--color-ink-soft)] mt-2">
+            reading that as <span className="text-[var(--color-ink)]">“{parsed.text}”</span>
+            {' · '}
+            {parsed.matched.join(' · ')}
+          </p>
+        )}
       </Panel>
 
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
@@ -135,7 +144,7 @@ export default function TodoContent() {
                     type="checkbox"
                     checked={t.done}
                     onChange={() => toggleTodo(t.id)}
-                    className="w-4 h-4 shrink-0 accent-[var(--color-tab-sky)]"
+                    className="w-4 h-4 shrink-0 accent-[var(--color-note-denim)]"
                   />
                   <button
                     onClick={() => updateTodo(t.id, { priority: nextPriority(t.priority) })}
@@ -167,41 +176,25 @@ export default function TodoContent() {
                     </span>
                   )}
 
-                  {editingDateId === t.id ? (
-                    <input
-                      autoFocus
-                      type="date"
-                      defaultValue={t.dueDate ?? ''}
-                      onBlur={(e) => {
-                        updateTodo(t.id, { dueDate: e.target.value || undefined });
-                        setEditingDateId(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') setEditingDateId(null);
-                      }}
-                      className="font-note text-xs border border-[var(--color-paper-line)] rounded-lg px-2 py-1"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setEditingDateId(t.id)}
-                      className={`font-note text-xs px-2 py-1 rounded-full border shrink-0 whitespace-nowrap ${
-                        isOverdue
-                          ? 'border-red-300 text-red-500 bg-red-50'
-                          : t.dueDate
-                          ? 'border-[var(--color-paper-line)] text-[var(--color-ink-soft)]'
-                          : 'border-dashed border-[var(--color-paper-line)] text-[var(--color-ink-soft)]/50'
-                      }`}
-                    >
-                      {t.dueDate ? format(parseISO(t.dueDate), 'MMM d') : '+ date'}
-                    </button>
-                  )}
+                  <DateField
+                    compact
+                    value={t.dueDate}
+                    onChange={(v) => updateTodo(t.id, { dueDate: v })}
+                    placeholder="+ date"
+                    className={`font-note text-xs px-2 py-1 rounded-full border shrink-0 whitespace-nowrap ${
+                      isOverdue
+                        ? 'border-[var(--color-note-rust)] text-[var(--color-note-rust)]'
+                        : t.dueDate
+                        ? 'border-[var(--color-paper-line)] text-[var(--color-ink-soft)]'
+                        : 'border-dashed border-[var(--color-paper-line)] text-[var(--color-ink-soft)]/50'
+                    }`}
+                  />
 
                   <button
                     onClick={() => removeTodo(t.id)}
-                    className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
-                    aria-label="Delete"
+                    className="font-note text-xs text-[var(--color-ink-soft)]/50 hover:text-red-600 shrink-0 px-1.5 -my-1 -mr-1"
                   >
-                    ×
+                    delete
                   </button>
                 </li>
               );
@@ -212,3 +205,5 @@ export default function TodoContent() {
     </>
   );
 }
+
+export { PRIORITY_META };

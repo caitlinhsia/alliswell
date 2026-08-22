@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey, type FrontWidgetKey } from '../store/useAppStore';
 import NotepadPage from '../components/NotepadPage';
 import StickyLayer from '../components/StickyLayer';
+import Icon, { type IconName } from '../components/Icon';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -15,13 +16,13 @@ import { todayStr, greeting } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 
-const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
-  schedule: { title: 'schedule', emoji: '🗓️' },
-  todo: { title: 'to-do', emoji: '✅' },
-  study: { title: 'study', emoji: '📚' },
-  journal: { title: 'journal', emoji: '📝' },
-  write: { title: 'notes', emoji: '📓' },
-  notes: { title: 'sticky board', emoji: '📌' },
+const PAGE_META: Record<DeskPageKey, { title: string; icon: IconName }> = {
+  schedule: { title: 'schedule', icon: 'schedule' },
+  todo: { title: 'to-do', icon: 'todo' },
+  study: { title: 'study', icon: 'study' },
+  journal: { title: 'journal', icon: 'journal' },
+  write: { title: 'notes', icon: 'notes' },
+  notes: { title: 'sticky board', icon: 'board' },
 };
 
 const FLIP_ORDER: ('front' | DeskPageKey)[] = [
@@ -40,22 +41,35 @@ const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1, 1.5];
 const pageVariants = {
   enter: (dir: number) =>
     dir > 0
-      ? { rotateX: 0, opacity: 0, scale: 0.98, zIndex: 0 }
-      : { rotateX: -105, opacity: 1, scale: 1, zIndex: 2 },
-  center: { rotateX: 0, opacity: 1, scale: 1, zIndex: 1 },
+      ? { rotateX: 0, opacity: 1, scale: 0.985, y: 6, zIndex: 0, filter: 'brightness(0.9)' }
+      : { rotateX: -118, opacity: 1, scale: 1, y: 0, zIndex: 2, filter: 'brightness(0.72)' },
+  center: {
+    rotateX: 0,
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    zIndex: 1,
+    filter: 'brightness(1)',
+  },
   exit: (dir: number) =>
     dir > 0
-      ? { rotateX: -105, opacity: 1, scale: 1, zIndex: 2 }
-      : { rotateX: 0, opacity: 0, scale: 0.98, zIndex: 0 },
+      ? { rotateX: -118, opacity: 1, scale: 1, y: 0, zIndex: 2, filter: 'brightness(0.72)' }
+      : { rotateX: 0, opacity: 1, scale: 0.985, y: 6, zIndex: 0, filter: 'brightness(0.9)' },
 };
 
-const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
-  mood: { label: 'Mood check-in', emoji: '🌤️' },
-  schedule: { label: "Today's schedule", emoji: '🗓️' },
-  todo: { label: 'To-do list', emoji: '✅' },
-  study: { label: 'Study minutes', emoji: '📚' },
-  write: { label: 'Notes', emoji: '📓' },
-  notes: { label: 'Sticky board', emoji: '📌' },
+// paper eases out fast then settles, rather than moving linearly
+const pageTransition = {
+  duration: 0.62,
+  ease: [0.33, 0.02, 0.2, 1] as [number, number, number, number],
+};
+
+const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; icon: IconName }> = {
+  mood: { label: 'Mood check-in', icon: 'mood' },
+  schedule: { label: "Today's schedule", icon: 'schedule' },
+  todo: { label: 'To-do list', icon: 'todo' },
+  study: { label: 'Study minutes', icon: 'study' },
+  write: { label: 'Notes', icon: 'notes' },
+  notes: { label: 'Sticky board', icon: 'board' },
 };
 
 function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
@@ -139,7 +153,7 @@ export default function Notebook() {
             title="Go to cover"
             className="font-note text-sm px-3 py-1.5 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)]/90 backdrop-blur-sm text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] flex items-center gap-1.5 transition-colors"
           >
-            🏠 cover
+            <Icon name="cover" /> cover
           </button>
           <p className="font-hand text-lg text-[var(--color-ink-soft)]">
             {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
@@ -154,7 +168,7 @@ export default function Notebook() {
                 : 'text-[var(--color-ink-soft)]'
             }`}
           >
-            📖 flip through
+            <Icon name="flip" /> flip through
           </button>
           <button
             onClick={() => setHomeViewMode('desk')}
@@ -164,7 +178,7 @@ export default function Notebook() {
                 : 'text-[var(--color-ink-soft)]'
             }`}
           >
-            🗂️ all together
+            <Icon name="desk" /> all together
           </button>
         </div>
       </div>
@@ -218,7 +232,7 @@ function FlipView({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
+            transition={pageTransition}
             className="absolute inset-0"
             style={{ transformOrigin: 'top center', transformStyle: 'preserve-3d', backfaceVisibility: 'hidden' }}
           >
@@ -228,7 +242,7 @@ function FlipView({
                 <StickyLayer page="front" />
               </NotepadPage>
             ) : (
-              <NotepadPage fill ringCount={24} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
+              <NotepadPage fill ringCount={24} title={PAGE_META[page].title} icon={PAGE_META[page].icon}>
                 {renderFullContent(page)}
                 {page !== 'notes' && page !== 'write' && <StickyLayer page={page} />}
               </NotepadPage>
@@ -283,6 +297,8 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const closeDeskPage = useAppStore((s) => s.closeDeskPage);
   const mergeDeskPage = useAppStore((s) => s.mergeDeskPage);
   const splitDeskPage = useAppStore((s) => s.splitDeskPage);
+  const deskSizes = useAppStore((s) => s.deskSizes);
+  const setDeskSize = useAppStore((s) => s.setDeskSize);
 
   const openKeys = new Set(deskGroups.flat());
 
@@ -324,20 +340,22 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
             <NotepadPage
               key={group[0]}
               title={PAGE_META[group[0]].title}
-              emoji={PAGE_META[group[0]].emoji}
+              icon={PAGE_META[group[0]].icon}
               rotate={ROTATIONS[i % ROTATIONS.length]}
               onClose={() => closeDeskPage(group[0])}
-              className="w-72"
-              resizable
+              size={deskSizes[group[0]]}
+              onResize={(s) => setDeskSize(group[0], s)}
               dragHandle={{ id: group[0], onDrop: (draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0]) }}
             >
-              {renderMini(group[0])}
-              <button
-                onClick={() => onOpenFull(group[0])}
-                className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
-              >
-                open full page →
-              </button>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {renderMini(group[0])}
+                <button
+                  onClick={() => onOpenFull(group[0])}
+                  className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
+                >
+                  open full page →
+                </button>
+              </div>
             </NotepadPage>
           ) : (
             <FoldOutSpread
@@ -351,9 +369,11 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
                   key={key}
                   id={key}
                   title={PAGE_META[key].title}
-                  emoji={PAGE_META[key].emoji}
+                  icon={PAGE_META[key].icon}
                   isFirst={pi === 0}
                   onClose={() => closeDeskPage(key)}
+                  size={deskSizes[key]}
+                  onResize={(s) => setDeskSize(key, s)}
                 >
                   {renderMini(key)}
                   <button
@@ -484,7 +504,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
                     }}
                     className="font-note text-sm text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] flex items-center gap-2"
                   >
-                    <span>{FRONT_WIDGET_META[key].emoji}</span>
+                    <Icon name={FRONT_WIDGET_META[key].icon} className="text-[var(--color-ink-soft)]" />
                     {FRONT_WIDGET_META[key].label}
                   </button>
                 ))}
@@ -510,15 +530,19 @@ function MoodWidget({ compact }: { compact: boolean }) {
           key={m.value}
           onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
           title={m.label}
-          className={`rounded-full border flex items-center justify-center transition-colors ${
-            compact ? 'text-lg w-8 h-8' : 'text-2xl w-12 h-12'
+          className={`rounded-full border font-note flex flex-col items-center justify-center leading-none transition-colors ${
+            compact ? 'w-9 h-9 text-[10px]' : 'w-14 h-14 text-xs'
           } ${
             todayEntry?.mood === m.value
-              ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
-              : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
+              ? 'border-[var(--color-ink)]'
+              : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
           }`}
+          style={
+            todayEntry?.mood === m.value ? { background: m.tone } : undefined
+          }
         >
-          {m.emoji}
+          <span className={compact ? 'text-sm' : 'text-lg'}>{m.mark}</span>
+          {!compact && <span className="mt-0.5">{m.label}</span>}
         </button>
       ))}
     </div>
@@ -679,13 +703,15 @@ function MiniJournal() {
           <button
             key={m.value}
             onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
-            className={`text-lg w-8 h-8 rounded-full border flex items-center justify-center ${
+            title={m.label}
+            className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm ${
               todayEntry?.mood === m.value
-                ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
-                : 'border-transparent hover:bg-[var(--color-paper-deep)]/60'
+                ? 'border-[var(--color-ink)]'
+                : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
             }`}
+            style={todayEntry?.mood === m.value ? { background: m.tone } : undefined}
           >
-            {m.emoji}
+            {m.mark}
           </button>
         ))}
       </div>

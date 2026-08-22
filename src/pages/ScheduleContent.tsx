@@ -3,6 +3,7 @@ import { addDays, format, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
 import ColorPicker from '../components/ColorPicker';
+import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
 import { NOTE_COLORS } from '../lib/colors';
 import type { NoteColor, Priority, ScheduleItem } from '../types';
@@ -110,12 +111,7 @@ export default function ScheduleContent() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="font-note text-xs text-[var(--color-ink-soft)]">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
-                />
+                <DateField value={date} onChange={(v) => setDate(v ?? todayStr())} allowClear={false} />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="font-note text-xs text-[var(--color-ink-soft)]">From</label>

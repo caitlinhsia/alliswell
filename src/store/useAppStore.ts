@@ -53,6 +53,9 @@ interface AppState {
   addFrontWidget: (key: FrontWidgetKey) => void;
   removeFrontWidget: (key: FrontWidgetKey) => void;
 
+  deskSizes: Partial<Record<DeskPageKey, { w: number; h: number }>>;
+  setDeskSize: (key: DeskPageKey, size: { w: number; h: number }) => void;
+
   deskGroups: DeskPageKey[][];
   openDeskPage: (key: DeskPageKey) => void;
   closeDeskPage: (key: DeskPageKey) => void;
@@ -166,6 +169,10 @@ export const useAppStore = create<AppState>()(
         ),
       removeFrontWidget: (key) =>
         set((s) => ({ frontPageWidgets: s.frontPageWidgets.filter((k) => k !== key) })),
+
+      deskSizes: {},
+      setDeskSize: (key, size) =>
+        set((s) => ({ deskSizes: { ...s.deskSizes, [key]: size } })),
 
       deskGroups: [['schedule'], ['notes']],
       openDeskPage: (key) =>
