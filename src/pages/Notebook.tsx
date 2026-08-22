@@ -413,10 +413,14 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
   return (
     <div
       className={`flex flex-col items-center text-center ${
-        compact ? 'gap-4' : 'h-full pt-[8%] gap-8'
+        compact
+          ? 'gap-4'
+          : // scroll inside the page instead of spilling past its bottom edge once
+            // enough widgets are added; px/pt leave room for the widgets' corner buttons
+            'h-full min-h-0 overflow-y-auto overflow-x-hidden gap-8 pt-[6%] pb-10 px-4'
       }`}
     >
-      <div>
+      <div className="shrink-0">
         <p
           className={`font-hand leading-tight text-[var(--color-ink)] ${
             compact ? 'text-4xl' : 'text-6xl md:text-7xl'
@@ -442,7 +446,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      <div>
+      <div className="shrink-0">
         <p
           className={`font-hand tabular-nums text-[var(--color-ink)] ${
             compact ? 'text-3xl' : 'text-6xl md:text-7xl'
@@ -459,7 +463,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       </div>
 
       {frontPageWidgets.length > 0 && (
-        <div className="flex flex-wrap items-start justify-center gap-4">
+        <div className="flex flex-wrap items-start justify-center gap-4 shrink-0">
           {frontPageWidgets.map((key) => (
             <div
               key={key}
@@ -483,7 +487,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       )}
 
       {!compact && availableWidgets.length > 0 && (
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setPickerOpen((o) => !o)}
             aria-label="Add widget"
