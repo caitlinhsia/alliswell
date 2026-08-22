@@ -1,12 +1,27 @@
-export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'orange' | 'purple';
+export type NoteColor =
+  | 'ochre'
+  | 'clay'
+  | 'rust'
+  | 'rose'
+  | 'plum'
+  | 'lilac'
+  | 'denim'
+  | 'teal'
+  | 'sage'
+  | 'moss'
+  | 'sand'
+  | 'slate';
 
 export interface ScheduleItem {
   id: string;
   title: string;
   date: string; // yyyy-MM-dd
   time?: string; // HH:mm
+  endTime?: string; // HH:mm
   done: boolean;
   category: 'task' | 'event';
+  subjectId?: string;
+  color?: NoteColor;
 }
 
 export interface Subject {
@@ -40,6 +55,8 @@ export interface JournalEntry {
   updatedAt: number;
 }
 
+export type StickyPage = 'board' | 'write' | 'schedule' | 'todo' | 'study' | 'journal' | 'front';
+
 export interface StickyNote {
   id: string;
   text: string;
@@ -49,6 +66,7 @@ export interface StickyNote {
   rotation: number;
   z: number;
   drawing?: string; // data URL of a canvas drawing
+  page: StickyPage;
 }
 
 export interface MindMapNode {

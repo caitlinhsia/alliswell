@@ -2,19 +2,23 @@ import { useMemo, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
+import ColorPicker from '../components/ColorPicker';
 import { todayStr } from '../lib/date';
-import type { Priority, ScheduleItem } from '../types';
+import { NOTE_COLORS } from '../lib/colors';
+import type { NoteColor, Priority, ScheduleItem } from '../types';
 
 const PRIORITY_DOT: Record<Priority, string> = {
-  high: 'var(--color-tab-blush)',
-  medium: 'var(--color-tab-butter)',
-  low: 'var(--color-tab-sage)',
+  high: 'var(--color-note-rust)',
+  medium: 'var(--color-note-ochre)',
+  low: 'var(--color-note-sage)',
 };
 
 export default function ScheduleContent() {
   const schedule = useAppStore((s) => s.schedule);
+  const subjects = useAppStore((s) => s.subjects);
   const addScheduleItem = useAppStore((s) => s.addScheduleItem);
   const updateScheduleItem = useAppStore((s) => s.updateScheduleItem);
+  const moveScheduleItem = useAppStore((s) => s.moveScheduleItem);
   const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
   const todos = useAppStore((s) => s.todos);
@@ -25,12 +29,16 @@ export default function ScheduleContent() {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(todayStr());
   const [time, setTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [category, setCategory] = useState<'task' | 'event'>('task');
+  const [formSubjectId, setFormSubjectId] = useState('');
 
   const [addingDate, setAddingDate] = useState<string | null>(null);
   const [quickText, setQuickText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const weekStart = useMemo(
     () => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7),
@@ -44,9 +52,13 @@ export default function ScheduleContent() {
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    addScheduleItem(title.trim(), date, time || undefined, category);
+    addScheduleItem(title.trim(), date, time || undefined, category, {
+      endTime: endTime || undefined,
+      subjectId: formSubjectId || undefined,
+    });
     setTitle('');
     setTime('');
+    setEndTime('');
     setFormOpen(false);
   }
 
@@ -70,10 +82,16 @@ export default function ScheduleContent() {
     setEditingId(null);
   }
 
+  function itemAccent(item: ScheduleItem): string | undefined {
+    if (item.color) return NOTE_COLORS[item.color];
+    const subj = subjects.find((s) => s.id === item.subjectId);
+    return subj ? NOTE_COLORS[subj.color] : undefined;
+  }
+
   return (
     <>
       <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
-        Click + on any day to add, click a task to rename it
+        Drag anything to another day to reschedule it · click a task to rename
       </p>
 
       <div className="mb-4 shrink-0">
@@ -87,7 +105,7 @@ export default function ScheduleContent() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Yoga, essay draft, dentist"
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -100,13 +118,37 @@ export default function ScheduleContent() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">Time</label>
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">From</label>
                 <input
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">To</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-note text-xs text-[var(--color-ink-soft)]">Subject</label>
+                <select
+                  value={formSubjectId}
+                  onChange={(e) => setFormSubjectId(e.target.value)}
+                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                >
+                  <option value="">none</option>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="font-note text-xs text-[var(--color-ink-soft)]">Type</label>
@@ -121,7 +163,7 @@ export default function ScheduleContent() {
               </div>
               <button
                 type="submit"
-                className="font-note bg-[var(--color-tab-sky)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+                className="font-note bg-[var(--color-note-denim)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
               >
                 + Add
               </button>
@@ -139,7 +181,7 @@ export default function ScheduleContent() {
             onClick={() => setFormOpen(true)}
             className="font-note text-sm px-3 py-1.5 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:bg-[var(--color-paper-deep)] hover:text-[var(--color-ink)]"
           >
-            + add with date, time, or event type
+            + add with date, time, subject, or event type
           </button>
         )}
       </div>
@@ -179,12 +221,26 @@ export default function ScheduleContent() {
           const dayTodos = todos.filter((t) => t.dueDate === dayStr);
           const isToday = dayStr === todayStr();
           const isAdding = addingDate === dayStr;
+          const isDropTarget = dragOverDate === dayStr;
           return (
             <div
               key={dayStr}
-              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col ${
-                isToday
-                  ? 'border-[var(--color-tab-sky)] bg-[var(--color-paper)]'
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverDate(dayStr);
+              }}
+              onDragLeave={() => setDragOverDate((d) => (d === dayStr ? null : d))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverDate(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) moveScheduleItem(id, dayStr);
+              }}
+              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col transition-colors ${
+                isDropTarget
+                  ? 'border-[var(--color-note-denim)] border-2 bg-[var(--color-note-denim)]/10'
+                  : isToday
+                  ? 'border-[var(--color-note-denim)] bg-[var(--color-paper)]'
                   : 'border-[var(--color-paper-line)] bg-[var(--color-paper)]/70'
               }`}
             >
@@ -207,56 +263,131 @@ export default function ScheduleContent() {
                 )}
               </div>
               <ul className="space-y-1.5 flex-1">
-                {items.map((item) => (
-                  <li
-                    key={item.id}
-                    className="group flex items-start gap-1.5 font-note text-xs leading-snug"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() => toggleScheduleItem(item.id)}
-                      className="mt-0.5 accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
-                    />
-                    {editingId === item.id ? (
-                      <input
-                        autoFocus
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        onBlur={() => saveEdit(item.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveEdit(item.id);
-                          if (e.key === 'Escape') setEditingId(null);
-                        }}
-                        className="flex-1 font-note bg-transparent border-b border-dashed border-[var(--color-ink-soft)] outline-none min-w-0"
-                      />
-                    ) : (
-                      <span
-                        onClick={() => startEdit(item)}
-                        className={`flex-1 cursor-text hover:underline decoration-dotted ${
-                          item.done ? 'line-through text-[var(--color-ink-soft)]' : ''
-                        } ${item.category === 'event' ? 'text-[var(--color-tab-blush)]' : ''}`}
-                      >
-                        {item.time && `${item.time} `}
-                        {item.title}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => removeScheduleItem(item.id)}
-                      className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
-                      aria-label="Delete"
+                {items.map((item) => {
+                  const accent = itemAccent(item);
+                  const subj = subjects.find((s) => s.id === item.subjectId);
+                  const isExpanded = expandedId === item.id;
+                  return (
+                    <li
+                      key={item.id}
+                      draggable={editingId !== item.id}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', item.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      className="rounded-lg border border-[var(--color-paper-line)] bg-[var(--color-paper)] px-1.5 py-1 cursor-grab active:cursor-grabbing"
+                      style={accent ? { borderLeft: `3px solid ${accent}` } : undefined}
                     >
-                      ×
-                    </button>
-                  </li>
-                ))}
+                      <div className="flex items-start gap-1.5 font-note text-xs leading-snug">
+                        <input
+                          type="checkbox"
+                          checked={item.done}
+                          onChange={() => toggleScheduleItem(item.id)}
+                          className="mt-0.5 accent-[var(--color-note-denim)] w-4 h-4 shrink-0"
+                        />
+                        {editingId === item.id ? (
+                          <input
+                            autoFocus
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            onBlur={() => saveEdit(item.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(item.id);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                            className="flex-1 font-note bg-transparent border-b border-dashed border-[var(--color-ink-soft)] outline-none min-w-0"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => startEdit(item)}
+                            className={`flex-1 cursor-text hover:underline decoration-dotted ${
+                              item.done ? 'line-through text-[var(--color-ink-soft)]' : ''
+                            }`}
+                          >
+                            {item.time && (
+                              <span className="text-[var(--color-ink-soft)]">
+                                {item.time}
+                                {item.endTime ? `–${item.endTime}` : ''}{' '}
+                              </span>
+                            )}
+                            {item.title}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                          aria-label="Item options"
+                          className="text-[var(--color-ink-soft)]/40 hover:text-[var(--color-ink)] shrink-0 px-1.5 -my-1 -mr-1 leading-none"
+                        >
+                          ⋯
+                        </button>
+                      </div>
+
+                      {subj && !isExpanded && (
+                        <p className="font-note text-[10px] text-[var(--color-ink-soft)] pl-[22px]">{subj.name}</p>
+                      )}
+
+                      {isExpanded && (
+                        <div className="pl-[22px] pt-1.5 pb-0.5 flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-note text-[10px] text-[var(--color-ink-soft)]">color</span>
+                            <ColorPicker
+                              size="sm"
+                              value={item.color ?? subj?.color ?? 'denim'}
+                              onChange={(c: NoteColor) => updateScheduleItem(item.id, { color: c })}
+                            />
+                          </div>
+                          <select
+                            value={item.subjectId ?? ''}
+                            onChange={(e) =>
+                              updateScheduleItem(item.id, { subjectId: e.target.value || undefined })
+                            }
+                            className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1.5 py-0.5 bg-[var(--color-paper)]"
+                          >
+                            <option value="">no subject</option>
+                            {subjects.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="time"
+                              value={item.time ?? ''}
+                              onChange={(e) => updateScheduleItem(item.id, { time: e.target.value || undefined })}
+                              className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1 py-0.5 bg-[var(--color-paper)] min-w-0 flex-1"
+                            />
+                            <span className="text-[10px] text-[var(--color-ink-soft)]">–</span>
+                            <input
+                              type="time"
+                              value={item.endTime ?? ''}
+                              onChange={(e) =>
+                                updateScheduleItem(item.id, { endTime: e.target.value || undefined })
+                              }
+                              className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1 py-0.5 bg-[var(--color-paper)] min-w-0 flex-1"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              removeScheduleItem(item.id);
+                              setExpandedId(null);
+                            }}
+                            className="font-note text-[11px] text-[var(--color-ink-soft)] hover:text-red-600 self-start"
+                          >
+                            delete
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
                 {dayTodos.map((t) => (
-                  <li key={t.id} className="flex items-start gap-1.5 font-note text-xs leading-snug">
+                  <li key={t.id} className="flex items-start gap-1.5 font-note text-xs leading-snug px-1.5">
                     <input
                       type="checkbox"
                       checked={t.done}
                       onChange={() => toggleTodo(t.id)}
-                      className="mt-0.5 accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
+                      className="mt-0.5 accent-[var(--color-note-denim)] w-4 h-4 shrink-0"
                     />
                     <span
                       className="mt-1 w-2 h-2 rounded-full shrink-0"

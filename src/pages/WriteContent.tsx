@@ -10,11 +10,12 @@ export default function WriteContent() {
   const [tab, setTab] = useState<Tab>('write');
   const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
   const setWriteNoteHtml = useAppStore((s) => s.setWriteNoteHtml);
-  const writeStickyNotes = useAppStore((s) => s.writeStickyNotes);
-  const addWriteStickyNote = useAppStore((s) => s.addWriteStickyNote);
-  const updateWriteStickyNote = useAppStore((s) => s.updateWriteStickyNote);
-  const removeWriteStickyNote = useAppStore((s) => s.removeWriteStickyNote);
-  const bringWriteStickyNoteToFront = useAppStore((s) => s.bringWriteStickyNoteToFront);
+  const stickyNotes = useAppStore((s) => s.stickyNotes);
+  const addStickyNote = useAppStore((s) => s.addStickyNote);
+  const updateStickyNote = useAppStore((s) => s.updateStickyNote);
+  const removeStickyNote = useAppStore((s) => s.removeStickyNote);
+  const bringStickyNoteToFront = useAppStore((s) => s.bringStickyNoteToFront);
+  const writeStickyNotes = stickyNotes.filter((n) => n.page === 'write');
 
   const editorRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -48,7 +49,7 @@ export default function WriteContent() {
     const board = boardRef.current;
     const x = board ? board.scrollLeft + 80 + Math.random() * 220 : 80 + Math.random() * 220;
     const y = board ? board.scrollTop + 80 + Math.random() * 220 : 80 + Math.random() * 220;
-    addWriteStickyNote(color, x, y);
+    addStickyNote('write', color, x, y);
   }
 
   return (
@@ -114,9 +115,9 @@ export default function WriteContent() {
                 <StickyNoteItem
                   key={note.id}
                   note={note}
-                  onUpdate={updateWriteStickyNote}
-                  onRemove={removeWriteStickyNote}
-                  onBringToFront={bringWriteStickyNoteToFront}
+                  onUpdate={updateStickyNote}
+                  onRemove={removeStickyNote}
+                  onBringToFront={bringStickyNoteToFront}
                 />
               ))}
             </div>

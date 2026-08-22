@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
+import ColorPicker from './ColorPicker';
 
 export default function MindMap() {
   const nodes = useAppStore((s) => s.mindMapNodes);
@@ -150,6 +151,12 @@ export default function MindMap() {
                         {n.text}
                       </span>
                     )}
+                    <ColorPicker
+                      size="sm"
+                      value={n.color}
+                      onChange={(c) => updateNode(n.id, { color: c })}
+                      label="Bubble color"
+                    />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

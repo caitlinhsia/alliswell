@@ -64,21 +64,27 @@ export function FoldPane({
       }`}
       style={{ minWidth: 200, minHeight: 220 }}
     >
-      <button
-        onClick={onClose}
-        aria-label="Close page"
-        className="absolute top-1 right-1 z-10 w-8 h-8 rounded-full font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 hover:bg-[var(--color-paper-deep)] text-lg leading-none flex items-center justify-center transition-colors"
-      >
-        ×
-      </button>
       <div
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', id);
           e.dataTransfer.effectAllowed = 'move';
         }}
-        className="-mx-5 mb-4 py-1.5 border-b-2 border-dotted border-[var(--color-ink-soft)]/40 cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)]"
-      />
+        title="Drag this edge onto another page to fold them together"
+        className="absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b-2 border-dashed border-[var(--color-ink-soft)]/40 cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40"
+      >
+        <span className="text-[var(--color-ink-soft)]/50 text-[10px] tracking-[0.3em] leading-none select-none">
+          ⠿⠿⠿
+        </span>
+      </div>
+
+      <button
+        onClick={onClose}
+        aria-label="Close page"
+        className="absolute top-0 right-0 z-20 w-7 h-7 font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 hover:bg-[var(--color-paper-deep)] text-base leading-none flex items-center justify-center transition-colors"
+      >
+        ×
+      </button>
       <h2 className="font-sans font-extrabold text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
         <span>{emoji}</span>
         {title}

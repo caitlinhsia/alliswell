@@ -1,19 +1,31 @@
 import type { NoteColor } from '../types';
 
 export const NOTE_COLORS: Record<NoteColor, string> = {
-  yellow: 'var(--color-note-yellow)',
-  pink: 'var(--color-note-pink)',
-  blue: 'var(--color-note-blue)',
-  green: 'var(--color-note-green)',
-  orange: 'var(--color-note-orange)',
-  purple: 'var(--color-note-purple)',
+  ochre: 'var(--color-note-ochre)',
+  clay: 'var(--color-note-clay)',
+  rust: 'var(--color-note-rust)',
+  rose: 'var(--color-note-rose)',
+  plum: 'var(--color-note-plum)',
+  lilac: 'var(--color-note-lilac)',
+  denim: 'var(--color-note-denim)',
+  teal: 'var(--color-note-teal)',
+  sage: 'var(--color-note-sage)',
+  moss: 'var(--color-note-moss)',
+  sand: 'var(--color-note-sand)',
+  slate: 'var(--color-note-slate)',
 };
 
 export const NOTE_COLOR_LIST: NoteColor[] = [
-  'yellow',
-  'pink',
-  'blue',
-  'green',
-  'orange',
-  'purple',
+  'ochre',
+  'clay',
+  'rust',
+  'rose',
+  'plum',
+  'lilac',
+  'denim',
+  'teal',
+  'sage',
+  'moss',
+  'sand',
+  'slate',
 ];

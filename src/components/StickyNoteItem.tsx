@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
+import { NOTE_COLORS } from '../lib/colors';
+import ColorPicker from './ColorPicker';
 import StickyDrawCanvas from './StickyDrawCanvas';
 import type { StickyNote } from '../types';
 
@@ -100,18 +101,14 @@ export default function StickyNoteItem({
         />
       )}
 
-      <div className="flex gap-1 px-2 pb-2">
-        {NOTE_COLOR_LIST.map((c) => (
-          <button
-            key={c}
-            onClick={() => onUpdate(note.id, { color: c })}
-            className={`w-3.5 h-3.5 rounded-full border ${
-              note.color === c ? 'border-[var(--color-ink)]' : 'border-transparent'
-            }`}
-            style={{ background: NOTE_COLORS[c] }}
-            aria-label={`Set color ${c}`}
-          />
-        ))}
+      <div className="flex items-center gap-2 px-3 pb-2">
+        <ColorPicker
+          size="sm"
+          value={note.color}
+          onChange={(c) => onUpdate(note.id, { color: c })}
+          label="Note color"
+        />
+        <span className="font-note text-[10px] text-[var(--color-ink-soft)]">color</span>
       </div>
     </div>
   );

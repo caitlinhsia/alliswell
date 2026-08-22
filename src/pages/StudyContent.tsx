@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import Panel from '../components/Panel';
+import ColorPicker from '../components/ColorPicker';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 import { todayStr } from '../lib/date';
 
@@ -9,6 +10,7 @@ const DURATIONS = [15, 25, 45];
 export default function StudyContent() {
   const subjects = useAppStore((s) => s.subjects);
   const addSubject = useAppStore((s) => s.addSubject);
+  const updateSubject = useAppStore((s) => s.updateSubject);
   const removeSubject = useAppStore((s) => s.removeSubject);
   const studyTodos = useAppStore((s) => s.studyTodos);
   const addStudyTodo = useAppStore((s) => s.addStudyTodo);
@@ -162,17 +164,19 @@ export default function StudyContent() {
           </form>
           <ul className="space-y-1.5 mb-4">
             {subjects.map((s) => (
-              <li key={s.id} className="flex items-center justify-between font-note text-sm">
-                <span className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full inline-block"
-                    style={{ background: NOTE_COLORS[s.color] }}
+              <li key={s.id} className="flex items-center justify-between font-note text-sm gap-2">
+                <span className="flex items-center gap-2 min-w-0">
+                  <ColorPicker
+                    size="sm"
+                    value={s.color}
+                    onChange={(c) => updateSubject(s.id, { color: c })}
+                    label={`Change ${s.name} color`}
                   />
-                  {s.name}
+                  <span className="truncate">{s.name}</span>
                 </span>
                 <button
                   onClick={() => removeSubject(s.id)}
-                  className="text-[var(--color-ink-soft)] hover:text-red-500 text-xs"
+                  className="text-[var(--color-ink-soft)] hover:text-red-500 text-xs shrink-0"
                 >
                   remove
                 </button>

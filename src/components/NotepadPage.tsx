@@ -69,15 +69,7 @@ export default function NotepadPage({
           ...(resizable ? { minWidth: 220, minHeight: 200, height: 320 } : {}),
         }}
       >
-        {onClose && (
-          <button
-            onClick={onClose}
-            aria-label="Close page"
-            className="absolute top-1 right-1 z-10 w-8 h-8 rounded-full font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 hover:bg-[var(--color-paper-deep)] text-lg leading-none flex items-center justify-center transition-colors"
-          >
-            ×
-          </button>
-        )}
+        {/* perforation: the tear-off strip sits flush under the rings */}
         <div
           draggable={!!dragHandle}
           onDragStart={
@@ -88,10 +80,36 @@ export default function NotepadPage({
                 }
               : undefined
           }
-          className={`-mx-5 mb-4 py-1.5 border-b-2 border-dotted border-[var(--color-ink-soft)]/40 ${
-            dragHandle ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)]' : ''
+          title={dragHandle ? 'Drag this edge onto another page to fold them together' : undefined}
+          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b-2 border-dashed border-[var(--color-ink-soft)]/40 ${
+            dragHandle
+              ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40'
+              : ''
           }`}
-        />
+        >
+          {dragHandle && (
+            <span className="text-[var(--color-ink-soft)]/50 text-[10px] tracking-[0.3em] leading-none select-none">
+              ⠿⠿⠿
+            </span>
+          )}
+        </div>
+
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close page"
+            className="absolute top-0 right-0 z-20 w-7 h-7 font-sans font-bold text-[var(--color-ink-soft)] hover:text-red-500 hover:bg-[var(--color-paper-deep)] text-base leading-none flex items-center justify-center transition-colors"
+          >
+            ×
+          </button>
+        )}
+
+        {resizable && (
+          <span
+            aria-hidden
+            className="absolute bottom-0.5 right-0.5 w-3 h-3 pointer-events-none border-b-2 border-r-2 border-[var(--color-ink-soft)]/35 rounded-br"
+          />
+        )}
         {title && (
           <h2 className="font-sans font-extrabold text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
             {emoji && <span>{emoji}</span>}

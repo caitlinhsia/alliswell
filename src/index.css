@@ -74,12 +74,18 @@
   --color-tab-butter: #cbb27a;
   --color-tab-lavender: #a89bbd;
 
-  --color-note-yellow: #ecdfa8;
-  --color-note-pink: #e6cdd3;
-  --color-note-blue: #c9d9e0;
-  --color-note-green: #d3ddc9;
-  --color-note-orange: #e4cdad;
-  --color-note-purple: #d5cbdb;
+  --color-note-ochre: #d9c17e;
+  --color-note-clay: #c98f72;
+  --color-note-rust: #b5705c;
+  --color-note-rose: #cf9c9c;
+  --color-note-plum: #a8809b;
+  --color-note-lilac: #a99cc4;
+  --color-note-denim: #7f9bb8;
+  --color-note-teal: #7fa6a3;
+  --color-note-sage: #9aae8b;
+  --color-note-moss: #7f8f68;
+  --color-note-sand: #cdb894;
+  --color-note-slate: #90969e;
 }
 
 html,

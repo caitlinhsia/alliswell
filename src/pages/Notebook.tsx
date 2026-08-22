@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey, type FrontWidgetKey } from '../store/useAppStore';
 import NotepadPage from '../components/NotepadPage';
+import StickyLayer from '../components/StickyLayer';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -34,10 +35,18 @@ const FLIP_ORDER: ('front' | DeskPageKey)[] = [
 ];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1, 1.5];
 
+// A real top-bound notebook: going forward the current page lifts up and over the
+// binding; going back the previous page swings down from above onto the stack.
 const pageVariants = {
-  enter: (dir: number) => ({ opacity: 0, y: dir * 60, rotate: dir * 3 }),
-  center: { opacity: 1, y: 0, rotate: 0 },
-  exit: (dir: number) => ({ opacity: 0, y: -dir * 60, rotate: -dir * 3 }),
+  enter: (dir: number) =>
+    dir > 0
+      ? { rotateX: 0, opacity: 0, scale: 0.98, zIndex: 0 }
+      : { rotateX: -105, opacity: 1, scale: 1, zIndex: 2 },
+  center: { rotateX: 0, opacity: 1, scale: 1, zIndex: 1 },
+  exit: (dir: number) =>
+    dir > 0
+      ? { rotateX: -105, opacity: 1, scale: 1, zIndex: 2 }
+      : { rotateX: 0, opacity: 0, scale: 0.98, zIndex: 0 },
 };
 
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
@@ -189,14 +198,17 @@ function FlipView({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-full max-w-[1600px] mx-auto h-[min(92vh,1000px)]">
+      <div
+        className="relative w-full max-w-[1600px] mx-auto h-[min(92vh,1000px)]"
+        style={{ perspective: '2200px', perspectiveOrigin: 'center top' }}
+      >
         {/* ambient shadow grounding the book on the desk */}
         <div
           className="absolute left-1/2 -translate-x-1/2 -bottom-5 w-[85%] h-14 rounded-[50%] bg-black/25 blur-2xl pointer-events-none"
           aria-hidden
         />
 
-        <AnimatePresence mode="wait" custom={direction}>
+        <AnimatePresence custom={direction} initial={false}>
           <motion.div
             key={page}
             custom={direction}
@@ -204,51 +216,60 @@ function FlipView({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
             className="absolute inset-0"
+            style={{ transformOrigin: 'top center', transformStyle: 'preserve-3d', backfaceVisibility: 'hidden' }}
           >
             {page === 'front' ? (
               <NotepadPage fill ringCount={24}>
                 <FrontPage />
+                <StickyLayer page="front" />
               </NotepadPage>
             ) : (
               <NotepadPage fill ringCount={24} title={PAGE_META[page].title} emoji={PAGE_META[page].emoji}>
                 {renderFullContent(page)}
+                {page !== 'notes' && page !== 'write' && <StickyLayer page={page} />}
               </NotepadPage>
             )}
           </motion.div>
         </AnimatePresence>
 
+      </div>
+
+      <div className="flex items-center gap-4 mt-6">
         <button
           onClick={() => go(-1)}
           aria-label="Previous page"
-          className="absolute left-1 md:-left-5 top-1/2 -translate-y-1/2 z-10 shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+          title="Previous page"
+          className="w-10 h-10 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] text-xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
         >
-          ‹
+          ↑
         </button>
+
+        <div className="flex gap-2">
+          {FLIP_ORDER.map((p, i) => (
+            <button
+              key={p}
+              onClick={() => {
+                setDirection(i > index ? 1 : -1);
+                setIndex(i);
+              }}
+              aria-label={`Go to ${p} page`}
+              className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                i === index ? 'bg-[var(--color-ink)]' : 'bg-[var(--color-paper-line)]'
+              }`}
+            />
+          ))}
+        </div>
+
         <button
           onClick={() => go(1)}
           aria-label="Next page"
-          className="absolute right-1 md:-right-5 top-1/2 -translate-y-1/2 z-10 shrink-0 w-11 h-11 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] font-hand text-3xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+          title="Next page"
+          className="w-10 h-10 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] text-xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
         >
-          ›
+          ↓
         </button>
-      </div>
-
-      <div className="flex gap-2 mt-6">
-        {FLIP_ORDER.map((p, i) => (
-          <button
-            key={p}
-            onClick={() => {
-              setDirection(i > index ? 1 : -1);
-              setIndex(i);
-            }}
-            aria-label={`Go to ${p} page`}
-            className={`w-2.5 h-2.5 rounded-full transition-colors ${
-              i === index ? 'bg-[var(--color-ink)]' : 'bg-[var(--color-paper-line)]'
-            }`}
-          />
-        ))}
       </div>
     </div>
   );
@@ -677,8 +698,9 @@ function MiniJournal() {
 
 function MiniWrite() {
   const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
-  const writeStickyNotes = useAppStore((s) => s.writeStickyNotes);
+  const stickyNotes = useAppStore((s) => s.stickyNotes);
   const mindMapNodes = useAppStore((s) => s.mindMapNodes);
+  const writeStickyNotes = stickyNotes.filter((n) => n.page === 'write');
 
   const preview = writeNoteHtml
     .replace(/<[^>]+>/g, ' ')
@@ -706,7 +728,10 @@ function MiniWrite() {
 function MiniNotes() {
   const stickyNotes = useAppStore((s) => s.stickyNotes);
   const addStickyNote = useAppStore((s) => s.addStickyNote);
-  const pinned = [...stickyNotes].sort((a, b) => b.z - a.z).slice(0, 2);
+  const pinned = stickyNotes
+    .filter((n) => n.page === 'board')
+    .sort((a, b) => b.z - a.z)
+    .slice(0, 2);
 
   return (
     <div>
@@ -728,6 +753,7 @@ function MiniNotes() {
       <button
         onClick={() =>
           addStickyNote(
+            'board',
             NOTE_COLOR_LIST[Math.floor(Math.random() * NOTE_COLOR_LIST.length)],
             80 + Math.random() * 200,
             80 + Math.random() * 200
