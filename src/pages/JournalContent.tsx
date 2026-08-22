@@ -25,17 +25,36 @@ export default function JournalContent() {
   const [text, setText] = useState('');
   const [mood, setMood] = useState<Mood>('okay');
   const [promptIndex, setPromptIndex] = useState(0);
+  const [dirty, setDirty] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const existing = journalEntries.find((e) => e.date === selectedDate);
 
   useEffect(() => {
     setText(existing?.text ?? '');
     setMood(existing?.mood ?? 'okay');
+    setDirty(false);
   }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function save(nextText: string, nextMood: Mood) {
     upsertJournalEntry(selectedDate, nextMood, nextText);
+    setDirty(false);
+    setJustSaved(true);
   }
+
+  // autosave shortly after typing stops, so entries are never lost to a missed blur
+  useEffect(() => {
+    if (!dirty) return;
+    const id = setTimeout(() => save(text, mood), 700);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, mood, dirty]);
+
+  useEffect(() => {
+    if (!justSaved) return;
+    const id = setTimeout(() => setJustSaved(false), 1500);
+    return () => clearTimeout(id);
+  }, [justSaved]);
 
   const history = [...journalEntries].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -87,13 +106,19 @@ export default function JournalContent() {
 
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setDirty(true);
+            }}
             onBlur={() => save(text, mood)}
             placeholder="Start writing..."
             className="flex-1 w-full font-note text-base lined-paper resize-none focus:outline-none px-1 leading-[31px] pt-1"
           />
 
-          <div className="flex justify-end gap-2 mt-2 shrink-0">
+          <div className="flex items-center justify-end gap-2 mt-2 shrink-0">
+            <span className="font-note text-xs text-[var(--color-ink-soft)] mr-auto">
+              {dirty ? 'saving…' : justSaved ? '✓ saved' : ''}
+            </span>
             {existing && (
               <button
                 onClick={() => {

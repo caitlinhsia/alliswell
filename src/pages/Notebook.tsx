@@ -9,6 +9,7 @@ import StudyContent from './StudyContent';
 import JournalContent from './JournalContent';
 import NotesBoard from './NotesBoard';
 import TodoContent from './TodoContent';
+import WriteContent from './WriteContent';
 import { todayStr, greeting } from '../lib/date';
 import { MOODS, moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
@@ -18,16 +19,25 @@ const PAGE_META: Record<DeskPageKey, { title: string; emoji: string }> = {
   todo: { title: 'to-do', emoji: '✅' },
   study: { title: 'study', emoji: '📚' },
   journal: { title: 'journal', emoji: '📝' },
-  notes: { title: 'notes', emoji: '📌' },
+  write: { title: 'notes', emoji: '📓' },
+  notes: { title: 'sticky board', emoji: '📌' },
 };
 
-const FLIP_ORDER: ('front' | DeskPageKey)[] = ['front', 'schedule', 'todo', 'study', 'journal', 'notes'];
-const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1];
+const FLIP_ORDER: ('front' | DeskPageKey)[] = [
+  'front',
+  'schedule',
+  'todo',
+  'study',
+  'journal',
+  'write',
+  'notes',
+];
+const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1, 1.5];
 
 const pageVariants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir * 60, rotate: dir * 4 }),
-  center: { opacity: 1, x: 0, rotate: 0 },
-  exit: (dir: number) => ({ opacity: 0, x: -dir * 60, rotate: -dir * 4 }),
+  enter: (dir: number) => ({ opacity: 0, y: dir * 60, rotate: dir * 3 }),
+  center: { opacity: 1, y: 0, rotate: 0 },
+  exit: (dir: number) => ({ opacity: 0, y: -dir * 60, rotate: -dir * 3 }),
 };
 
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }> = {
@@ -35,7 +45,8 @@ const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; emoji: string }
   schedule: { label: "Today's schedule", emoji: '🗓️' },
   todo: { label: 'To-do list', emoji: '✅' },
   study: { label: 'Study minutes', emoji: '📚' },
-  notes: { label: 'Sticky notes', emoji: '📌' },
+  write: { label: 'Notes', emoji: '📓' },
+  notes: { label: 'Sticky board', emoji: '📌' },
 };
 
 function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
@@ -48,6 +59,8 @@ function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
       return <MiniTodo />;
     case 'study':
       return <MiniStudy />;
+    case 'write':
+      return <MiniWrite />;
     case 'notes':
       return <MiniNotes />;
   }
@@ -63,6 +76,8 @@ function renderFullContent(key: DeskPageKey) {
       return <StudyContent />;
     case 'journal':
       return <JournalContent />;
+    case 'write':
+      return <WriteContent />;
     case 'notes':
       return <NotesBoard />;
   }
@@ -78,6 +93,8 @@ function renderMini(key: DeskPageKey) {
       return <MiniStudy />;
     case 'journal':
       return <MiniJournal />;
+    case 'write':
+      return <MiniWrite />;
     case 'notes':
       return <MiniNotes />;
   }
@@ -97,12 +114,28 @@ export default function Notebook() {
     setHomeViewMode('flip');
   }
 
+  function goToCover() {
+    setDirection(-1);
+    setFlipIndex(0);
+    setHomeViewMode('flip');
+  }
+
   return (
     <div className="h-screen overflow-y-auto desk-background p-3 md:p-4">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
-        <p className="font-hand text-lg text-[var(--color-ink-soft)]">
-          {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
-        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={goToCover}
+            aria-label="Go to cover"
+            title="Go to cover"
+            className="font-note text-sm px-3 py-1.5 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)]/90 backdrop-blur-sm text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] flex items-center gap-1.5 transition-colors"
+          >
+            🏠 cover
+          </button>
+          <p className="font-hand text-lg text-[var(--color-ink-soft)]">
+            {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
+          </p>
+        </div>
         <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]/90 backdrop-blur-sm">
           <button
             onClick={() => setHomeViewMode('flip')}
@@ -247,7 +280,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
             ))}
         </div>
         <p className="font-note text-xs text-[var(--color-ink-soft)]">
-          drag a page's dotted edge onto another to fold them together
+          drag a page's dotted edge onto another to fold them together · drag a corner to resize
         </p>
       </div>
 
@@ -272,6 +305,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
               rotate={ROTATIONS[i % ROTATIONS.length]}
               onClose={() => closeDeskPage(group[0])}
               className="w-72"
+              resizable
               dragHandle={{ id: group[0], onDrop: (draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0]) }}
             >
               {renderMini(group[0])}
@@ -637,6 +671,34 @@ function MiniJournal() {
           feeling {moodMeta(todayEntry.mood).label.toLowerCase()}
         </p>
       )}
+    </div>
+  );
+}
+
+function MiniWrite() {
+  const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
+  const writeStickyNotes = useAppStore((s) => s.writeStickyNotes);
+  const mindMapNodes = useAppStore((s) => s.mindMapNodes);
+
+  const preview = writeNoteHtml
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 90);
+
+  return (
+    <div>
+      {preview ? (
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2 line-clamp-3">{preview}…</p>
+      ) : (
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">
+          A lined page for writing, sticky notes, and a mind map.
+        </p>
+      )}
+      <p className="font-note text-xs text-[var(--color-ink-soft)]">
+        {writeStickyNotes.length} sticky note{writeStickyNotes.length === 1 ? '' : 's'} · {mindMapNodes.length} mind
+        map bubble{mindMapNodes.length === 1 ? '' : 's'}
+      </p>
     </div>
   );
 }

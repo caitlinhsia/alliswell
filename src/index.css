@@ -68,18 +68,18 @@
   --color-ink: #33291f;
   --color-ink-soft: #6b5f4f;
 
-  --color-tab-sage: #93ab97;
-  --color-tab-sky: #8fb3d9;
-  --color-tab-blush: #e3a5a0;
-  --color-tab-butter: #e3c06a;
-  --color-tab-lavender: #b3a0d6;
+  --color-tab-sage: #8a9c8a;
+  --color-tab-sky: #93acc4;
+  --color-tab-blush: #cf9f9a;
+  --color-tab-butter: #cbb27a;
+  --color-tab-lavender: #a89bbd;
 
-  --color-note-yellow: #fdf1a8;
-  --color-note-pink: #fbd4e3;
-  --color-note-blue: #cde6fb;
-  --color-note-green: #d8f0d0;
-  --color-note-orange: #fbdcae;
-  --color-note-purple: #e3d5fb;
+  --color-note-yellow: #ecdfa8;
+  --color-note-pink: #e6cdd3;
+  --color-note-blue: #c9d9e0;
+  --color-note-green: #d3ddc9;
+  --color-note-orange: #e4cdad;
+  --color-note-purple: #d5cbdb;
 }
 
 html,
@@ -118,6 +118,22 @@ body {
     var(--color-paper-line) 31px
   );
   background-position-y: 4px;
+}
+
+[contenteditable] ul {
+  list-style: disc;
+  padding-left: 1.5em;
+}
+[contenteditable] ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+}
+
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-ink-soft);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .desk-background {

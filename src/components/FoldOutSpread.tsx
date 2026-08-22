@@ -59,9 +59,10 @@ export function FoldPane({
 }) {
   return (
     <div
-      className={`relative w-64 pt-7 px-5 pb-5 ${
+      className={`relative w-64 pt-7 px-5 pb-5 resize-x overflow-auto ${
         !isFirst ? 'border-l-2 border-dashed border-[var(--color-paper-line)]' : ''
       }`}
+      style={{ minWidth: 200, minHeight: 220 }}
     >
       <button
         onClick={onClose}

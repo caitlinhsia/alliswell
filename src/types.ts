@@ -48,6 +48,16 @@ export interface StickyNote {
   y: number;
   rotation: number;
   z: number;
+  drawing?: string; // data URL of a canvas drawing
+}
+
+export interface MindMapNode {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  parentId: string | null;
+  color: NoteColor;
 }
 
 export type Priority = 'high' | 'medium' | 'low';

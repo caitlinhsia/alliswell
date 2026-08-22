@@ -17,6 +17,7 @@ export default function NotepadPage({
   ringCount = 8,
   fill = false,
   dragHandle,
+  resizable = false,
 }: {
   title?: string;
   emoji?: string;
@@ -27,6 +28,7 @@ export default function NotepadPage({
   ringCount?: number;
   fill?: boolean;
   dragHandle?: DragHandle;
+  resizable?: boolean;
 }) {
   const [dragOver, setDragOver] = useState(false);
 
@@ -59,8 +61,13 @@ export default function NotepadPage({
         }
         className={`relative bg-[#fffdf8] border-[3px] pt-7 px-5 pb-5 shadow-[5px_6px_0_rgba(51,41,31,0.10)] transition-colors ${
           dragOver ? 'border-[var(--color-tab-sky)]' : 'border-[var(--color-ink)]'
-        } ${fill ? 'w-full h-full flex flex-col overflow-hidden lined-paper' : ''} ${className}`}
-        style={{ borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px' }}
+        } ${fill ? 'w-full h-full flex flex-col overflow-hidden lined-paper' : ''} ${
+          resizable ? 'overflow-auto resize' : ''
+        } ${className}`}
+        style={{
+          borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px',
+          ...(resizable ? { minWidth: 220, minHeight: 200, height: 320 } : {}),
+        }}
       >
         {onClose && (
           <button

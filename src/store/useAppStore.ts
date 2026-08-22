@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
   JournalEntry,
+  MindMapNode,
   Mood,
   NoteColor,
   Priority,
@@ -17,9 +18,9 @@ function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
-export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes' | 'todo';
+export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes' | 'todo' | 'write';
 export type HomeViewMode = 'flip' | 'desk';
-export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo';
+export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo' | 'write';
 
 interface AppState {
   userName: string;
@@ -72,6 +73,20 @@ interface AppState {
   updateStickyNote: (id: string, patch: Partial<StickyNote>) => void;
   removeStickyNote: (id: string) => void;
   bringStickyNoteToFront: (id: string) => void;
+
+  writeNoteHtml: string;
+  setWriteNoteHtml: (html: string) => void;
+
+  writeStickyNotes: StickyNote[];
+  addWriteStickyNote: (color: NoteColor, x: number, y: number) => void;
+  updateWriteStickyNote: (id: string, patch: Partial<StickyNote>) => void;
+  removeWriteStickyNote: (id: string) => void;
+  bringWriteStickyNoteToFront: (id: string) => void;
+
+  mindMapNodes: MindMapNode[];
+  addMindMapNode: (parentId: string | null, text: string, x: number, y: number, color: NoteColor) => string;
+  updateMindMapNode: (id: string, patch: Partial<Pick<MindMapNode, 'text' | 'x' | 'y' | 'color'>>) => void;
+  removeMindMapNode: (id: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -261,6 +276,69 @@ export const useAppStore = create<AppState>()(
           stickyNotes: s.stickyNotes.map((n) => (n.id === id ? { ...n, z: maxZ + 1 } : n)),
         }));
       },
+
+      writeNoteHtml: '',
+      setWriteNoteHtml: (html) => set({ writeNoteHtml: html }),
+
+      writeStickyNotes: [],
+      addWriteStickyNote: (color, x, y) =>
+        set((s) => {
+          const maxZ = s.writeStickyNotes.reduce((m, n) => Math.max(m, n.z), 0);
+          return {
+            writeStickyNotes: [
+              ...s.writeStickyNotes,
+              {
+                id: uid(),
+                text: '',
+                color,
+                x,
+                y,
+                rotation: Math.random() * 8 - 4,
+                z: maxZ + 1,
+              },
+            ],
+          };
+        }),
+      updateWriteStickyNote: (id, patch) =>
+        set((s) => ({
+          writeStickyNotes: s.writeStickyNotes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
+        })),
+      removeWriteStickyNote: (id) =>
+        set((s) => ({ writeStickyNotes: s.writeStickyNotes.filter((n) => n.id !== id) })),
+      bringWriteStickyNoteToFront: (id) => {
+        const maxZ = get().writeStickyNotes.reduce((m, n) => Math.max(m, n.z), 0);
+        set((s) => ({
+          writeStickyNotes: s.writeStickyNotes.map((n) => (n.id === id ? { ...n, z: maxZ + 1 } : n)),
+        }));
+      },
+
+      mindMapNodes: [],
+      addMindMapNode: (parentId, text, x, y, color) => {
+        const id = uid();
+        set((s) => ({
+          mindMapNodes: [...s.mindMapNodes, { id, text, x, y, parentId, color }],
+        }));
+        return id;
+      },
+      updateMindMapNode: (id, patch) =>
+        set((s) => ({
+          mindMapNodes: s.mindMapNodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
+        })),
+      removeMindMapNode: (id) =>
+        set((s) => {
+          const toRemove = new Set([id]);
+          let grew = true;
+          while (grew) {
+            grew = false;
+            for (const n of s.mindMapNodes) {
+              if (n.parentId && toRemove.has(n.parentId) && !toRemove.has(n.id)) {
+                toRemove.add(n.id);
+                grew = true;
+              }
+            }
+          }
+          return { mindMapNodes: s.mindMapNodes.filter((n) => !toRemove.has(n.id)) };
+        }),
     }),
     { name: 'alliswell-storage' }
   )

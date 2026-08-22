@@ -6,6 +6,9 @@ import { NOTE_COLOR_LIST, NOTE_COLORS } from '../lib/colors';
 export default function NotesBoard() {
   const stickyNotes = useAppStore((s) => s.stickyNotes);
   const addStickyNote = useAppStore((s) => s.addStickyNote);
+  const updateStickyNote = useAppStore((s) => s.updateStickyNote);
+  const removeStickyNote = useAppStore((s) => s.removeStickyNote);
+  const bringStickyNoteToFront = useAppStore((s) => s.bringStickyNoteToFront);
   const boardRef = useRef<HTMLDivElement>(null);
 
   function handleAdd(color: (typeof NOTE_COLOR_LIST)[number]) {
@@ -45,7 +48,13 @@ export default function NotesBoard() {
             </p>
           )}
           {stickyNotes.map((note) => (
-            <StickyNoteItem key={note.id} note={note} />
+            <StickyNoteItem
+              key={note.id}
+              note={note}
+              onUpdate={updateStickyNote}
+              onRemove={removeStickyNote}
+              onBringToFront={bringStickyNoteToFront}
+            />
           ))}
         </div>
       </div>

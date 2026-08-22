@@ -1,30 +1,37 @@
 import { useRef, useState } from 'react';
-import { useAppStore } from '../store/useAppStore';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
+import StickyDrawCanvas from './StickyDrawCanvas';
 import type { StickyNote } from '../types';
 
-export default function StickyNoteItem({ note }: { note: StickyNote }) {
-  const updateStickyNote = useAppStore((s) => s.updateStickyNote);
-  const removeStickyNote = useAppStore((s) => s.removeStickyNote);
-  const bringToFront = useAppStore((s) => s.bringStickyNoteToFront);
-
+export default function StickyNoteItem({
+  note,
+  onUpdate,
+  onRemove,
+  onBringToFront,
+}: {
+  note: StickyNote;
+  onUpdate: (id: string, patch: Partial<StickyNote>) => void;
+  onRemove: (id: string) => void;
+  onBringToFront: (id: string) => void;
+}) {
   const dragRef = useRef<{ startX: number; startY: number; noteX: number; noteY: number } | null>(
     null
   );
   const [dragging, setDragging] = useState(false);
+  const [mode, setMode] = useState<'text' | 'draw'>('text');
 
   function onHandlePointerDown(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, noteX: note.x, noteY: note.y };
     setDragging(true);
-    bringToFront(note.id);
+    onBringToFront(note.id);
   }
 
   function onHandlePointerMove(e: React.PointerEvent) {
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    updateStickyNote(note.id, {
+    onUpdate(note.id, {
       x: Math.max(0, dragRef.current.noteX + dx),
       y: Math.max(0, dragRef.current.noteY + dy),
     });
@@ -46,35 +53,58 @@ export default function StickyNoteItem({ note }: { note: StickyNote }) {
         transform: `rotate(${dragging ? 0 : note.rotation}deg)`,
         transition: dragging ? 'none' : 'transform 0.15s',
       }}
-      onPointerDown={() => bringToFront(note.id)}
+      onPointerDown={() => onBringToFront(note.id)}
     >
-      <div
-        onPointerDown={onHandlePointerDown}
-        onPointerMove={onHandlePointerMove}
-        onPointerUp={onHandlePointerUp}
-        className="h-6 flex items-center justify-between px-2 cursor-grab active:cursor-grabbing"
-      >
-        <span className="text-[var(--color-ink-soft)] text-xs">⠿⠿</span>
-        <button
-          onClick={() => removeStickyNote(note.id)}
-          className="text-[var(--color-ink-soft)] hover:text-red-600 text-base leading-none px-2 py-2 -m-2"
-          aria-label="Delete note"
+      <div className="h-7 flex items-center justify-between px-1">
+        <span
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={onHandlePointerUp}
+          className="text-[var(--color-ink-soft)] text-xs cursor-grab active:cursor-grabbing px-2 py-2 -m-2"
         >
-          ×
-        </button>
+          ⠿⠿
+        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMode((m) => (m === 'text' ? 'draw' : 'text'))}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={mode === 'text' ? 'Switch to drawing' : 'Switch to text'}
+            title={mode === 'text' ? 'Draw' : 'Write'}
+            className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] text-xs leading-none px-1.5 py-1.5 -m-1.5"
+          >
+            {mode === 'text' ? '✎' : 'Aa'}
+          </button>
+          <button
+            onClick={() => onRemove(note.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="text-[var(--color-ink-soft)] hover:text-red-600 text-base leading-none px-1.5 py-1.5 -m-1.5"
+            aria-label="Delete note"
+          >
+            ×
+          </button>
+        </div>
       </div>
-      <textarea
-        value={note.text}
-        onChange={(e) => updateStickyNote(note.id, { text: e.target.value })}
-        placeholder="write something..."
-        rows={5}
-        className="font-note text-sm bg-transparent resize-none focus:outline-none px-3 pb-2 flex-1"
-      />
+
+      {mode === 'text' ? (
+        <textarea
+          value={note.text}
+          onChange={(e) => onUpdate(note.id, { text: e.target.value })}
+          placeholder="write something..."
+          rows={5}
+          className="font-note text-sm bg-transparent resize-none focus:outline-none px-3 pb-2 flex-1"
+        />
+      ) : (
+        <StickyDrawCanvas
+          value={note.drawing}
+          onChange={(dataUrl) => onUpdate(note.id, { drawing: dataUrl })}
+        />
+      )}
+
       <div className="flex gap-1 px-2 pb-2">
         {NOTE_COLOR_LIST.map((c) => (
           <button
             key={c}
-            onClick={() => updateStickyNote(note.id, { color: c })}
+            onClick={() => onUpdate(note.id, { color: c })}
             className={`w-3.5 h-3.5 rounded-full border ${
               note.color === c ? 'border-[var(--color-ink)]' : 'border-transparent'
             }`}
