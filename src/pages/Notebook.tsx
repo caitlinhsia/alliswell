@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAppStore, type DeskPageKey, type FrontWidgetKey } from '../store/useAppStore';
@@ -291,20 +291,78 @@ function FlipView({
   );
 }
 
+type DeskCard = { key: string; group: DeskPageKey[] };
+
+/** Auto-placement for a card that has never been positioned. */
+function defaultPos(i: number) {
+  const perRow = 4;
+  return { x: 24 + (i % perRow) * 300, y: 16 + Math.floor(i / perRow) * 370, z: i + 1 };
+}
+
 function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const deskGroups = useAppStore((s) => s.deskGroups);
   const openDeskPage = useAppStore((s) => s.openDeskPage);
   const closeDeskPage = useAppStore((s) => s.closeDeskPage);
-  const mergeDeskPage = useAppStore((s) => s.mergeDeskPage);
   const splitDeskPage = useAppStore((s) => s.splitDeskPage);
   const deskSizes = useAppStore((s) => s.deskSizes);
   const setDeskSize = useAppStore((s) => s.setDeskSize);
+  const deskLayout = useAppStore((s) => s.deskLayout);
+  const setDeskPos = useAppStore((s) => s.setDeskPos);
+  const bringToFront = useAppStore((s) => s.bringDeskCardToFront);
+
+  const [draggingKey, setDraggingKey] = useState<string | null>(null);
+  const dragRef = useRef<{ key: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const openKeys = new Set(deskGroups.flat());
+  const cards: DeskCard[] = [
+    { key: 'front', group: [] },
+    ...deskGroups.map((g) => ({ key: g[0], group: g })),
+  ];
+
+  function posOf(key: string, i: number) {
+    return deskLayout[key] ?? defaultPos(i);
+  }
+
+  function startDrag(e: React.PointerEvent, key: string, i: number) {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const p = posOf(key, i);
+    dragRef.current = { key, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y };
+    setDraggingKey(key);
+    bringToFront(key, p);
+  }
+
+  function onMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    setDeskPos(d.key, {
+      x: Math.max(0, d.ox + (e.clientX - d.sx)),
+      y: Math.max(0, d.oy + (e.clientY - d.sy)),
+    });
+  }
+
+  function endDrag() {
+    dragRef.current = null;
+    setDraggingKey(null);
+  }
+
+  // keep the canvas tall/wide enough to reach the lowest-right card
+  const extent = cards.reduce(
+    (acc, c, i) => {
+      const p = posOf(c.key, i);
+      const sz = deskSizes[c.group[0] as DeskPageKey];
+      return {
+        w: Math.max(acc.w, p.x + (sz?.w ?? 300) + 80),
+        h: Math.max(acc.h, p.y + (sz?.h ?? 340) + 80),
+      };
+    },
+    { w: 0, h: 480 }
+  );
 
   return (
     <div>
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div className="flex gap-2 flex-wrap">
           {(Object.keys(PAGE_META) as DeskPageKey[])
             .filter((k) => !openKeys.has(k))
@@ -319,74 +377,108 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
             ))}
         </div>
         <p className="font-note text-xs text-[var(--color-ink-soft)]">
-          drag a page's dotted edge onto another to fold them together · drag a corner to resize
+          drag the torn edge to move a page · drop pages on top of each other · drag a corner to resize
         </p>
       </div>
 
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          const draggedId = e.dataTransfer.getData('text/plain');
-          if (draggedId) splitDeskPage(draggedId as DeskPageKey);
-        }}
-        className="flex flex-wrap items-start gap-x-10 gap-y-14 min-h-[50vh]"
+        ref={canvasRef}
+        onPointerMove={onMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        className="relative"
+        style={{ width: extent.w, height: extent.h }}
       >
-        <NotepadPage rotate={-1.5} ringCount={6} className="w-64">
-          <FrontPage compact />
-        </NotepadPage>
-
-        {deskGroups.map((group, i) =>
-          group.length === 1 ? (
-            <NotepadPage
-              key={group[0]}
-              title={PAGE_META[group[0]].title}
-              icon={PAGE_META[group[0]].icon}
-              rotate={ROTATIONS[i % ROTATIONS.length]}
-              onClose={() => closeDeskPage(group[0])}
-              size={deskSizes[group[0]]}
-              onResize={(s) => setDeskSize(group[0], s)}
-              dragHandle={{ id: group[0], onDrop: (draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0]) }}
+        {cards.map((card, i) => {
+          const p = posOf(card.key, i);
+          const isDragging = draggingKey === card.key;
+          const isFront = card.key === 'front';
+          return (
+            <div
+              key={card.key}
+              onPointerDown={() => bringToFront(card.key, p)}
+              className="absolute"
+              style={{
+                left: p.x,
+                top: p.y,
+                zIndex: isDragging ? 9999 : p.z,
+                transition: isDragging ? 'none' : 'filter 160ms ease, transform 160ms ease',
+                transform: isDragging ? 'scale(1.035)' : 'scale(1)',
+                filter: isDragging
+                  ? 'drop-shadow(0 18px 26px rgba(51,41,31,0.32))'
+                  : 'drop-shadow(0 4px 8px rgba(51,41,31,0.14))',
+              }}
             >
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                {renderMini(group[0])}
-                <button
-                  onClick={() => onOpenFull(group[0])}
-                  className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
+              {isFront ? (
+                <NotepadPage
+                  rotate={isDragging ? 0 : -1.5}
+                  ringCount={6}
+                  className="w-64"
+                  lifted={isDragging}
+                  grabHandle={(e) => startDrag(e, card.key, i)}
                 >
-                  open full page →
-                </button>
-              </div>
-            </NotepadPage>
-          ) : (
-            <FoldOutSpread
-              key={group.join('-')}
-              rotate={ROTATIONS[i % ROTATIONS.length]}
-              ringCount={6 * group.length}
-              onDropInto={(draggedId) => mergeDeskPage(draggedId as DeskPageKey, group[0])}
-            >
-              {group.map((key, pi) => (
-                <FoldPane
-                  key={key}
-                  id={key}
-                  title={PAGE_META[key].title}
-                  icon={PAGE_META[key].icon}
-                  isFirst={pi === 0}
-                  onClose={() => closeDeskPage(key)}
-                  size={deskSizes[key]}
-                  onResize={(s) => setDeskSize(key, s)}
+                  <FrontPage compact />
+                </NotepadPage>
+              ) : card.group.length === 1 ? (
+                <NotepadPage
+                  title={PAGE_META[card.group[0]].title}
+                  icon={PAGE_META[card.group[0]].icon}
+                  rotate={isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
+                  onClose={() => closeDeskPage(card.group[0])}
+                  size={deskSizes[card.group[0]]}
+                  onResize={(sz) => setDeskSize(card.group[0], sz)}
+                  lifted={isDragging}
+                  grabHandle={(e) => startDrag(e, card.key, i)}
                 >
-                  {renderMini(key)}
-                  <button
-                    onClick={() => onOpenFull(key)}
-                    className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
-                  >
-                    open full page →
-                  </button>
-                </FoldPane>
-              ))}
-            </FoldOutSpread>
-          )
-        )}
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    {renderMini(card.group[0])}
+                    <button
+                      onClick={() => onOpenFull(card.group[0])}
+                      className="font-note text-xs underline text-[var(--color-ink-soft)] block mt-2"
+                    >
+                      open full page →
+                    </button>
+                  </div>
+                </NotepadPage>
+              ) : (
+                <FoldOutSpread
+                  rotate={isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
+                  ringCount={6 * card.group.length}
+                  lifted={isDragging}
+                  grabHandle={(e) => startDrag(e, card.key, i)}
+                >
+                  {card.group.map((key, pi) => (
+                    <FoldPane
+                      key={key}
+                      title={PAGE_META[key].title}
+                      icon={PAGE_META[key].icon}
+                      isFirst={pi === 0}
+                      onClose={() => closeDeskPage(key)}
+                      size={deskSizes[key]}
+                      onResize={(sz) => setDeskSize(key, sz)}
+                    >
+                      {renderMini(key)}
+                      <div className="flex items-center gap-3 mt-2">
+                        <button
+                          onClick={() => onOpenFull(key)}
+                          className="font-note text-xs underline text-[var(--color-ink-soft)]"
+                        >
+                          open full page →
+                        </button>
+                        <button
+                          onClick={() => splitDeskPage(key)}
+                          className="font-note text-xs underline text-[var(--color-ink-soft)]"
+                        >
+                          unfold
+                        </button>
+                      </div>
+                    </FoldPane>
+                  ))}
+                </FoldOutSpread>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

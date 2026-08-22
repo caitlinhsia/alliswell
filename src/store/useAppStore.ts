@@ -56,6 +56,12 @@ interface AppState {
   deskSizes: Partial<Record<DeskPageKey, { w: number; h: number }>>;
   setDeskSize: (key: DeskPageKey, size: { w: number; h: number }) => void;
 
+  /** Free positions on the desk, keyed by card ('front' or a page key). */
+  deskLayout: Record<string, { x: number; y: number; z: number }>;
+  setDeskPos: (key: string, pos: { x: number; y: number }) => void;
+  /** `at` seeds x/y for a card that has never been moved, so raising it doesn't relocate it. */
+  bringDeskCardToFront: (key: string, at?: { x: number; y: number }) => void;
+
   deskGroups: DeskPageKey[][];
   openDeskPage: (key: DeskPageKey) => void;
   closeDeskPage: (key: DeskPageKey) => void;
@@ -173,6 +179,27 @@ export const useAppStore = create<AppState>()(
       deskSizes: {},
       setDeskSize: (key, size) =>
         set((s) => ({ deskSizes: { ...s.deskSizes, [key]: size } })),
+
+      deskLayout: {},
+      setDeskPos: (key, pos) =>
+        set((s) => ({
+          deskLayout: {
+            ...s.deskLayout,
+            [key]: { ...pos, z: s.deskLayout[key]?.z ?? 1 },
+          },
+        })),
+      bringDeskCardToFront: (key, at) =>
+        set((s) => {
+          const maxZ = Object.values(s.deskLayout).reduce((m, c) => Math.max(m, c.z), 0);
+          const cur = s.deskLayout[key];
+          if (cur && cur.z === maxZ && maxZ > 0) return {};
+          return {
+            deskLayout: {
+              ...s.deskLayout,
+              [key]: { x: cur?.x ?? at?.x ?? 0, y: cur?.y ?? at?.y ?? 0, z: maxZ + 1 },
+            },
+          };
+        }),
 
       deskGroups: [['schedule'], ['notes']],
       openDeskPage: (key) =>

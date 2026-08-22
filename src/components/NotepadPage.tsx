@@ -8,6 +8,26 @@ export interface DragHandle {
   onDrop: (draggedId: string) => void;
 }
 
+/**
+ * Ragged top edge, as if the sheet was ripped off the pad. Teeth are uneven —
+ * a perfectly regular zigzag reads as a graphic, not as torn paper — but the
+ * jitter is derived from the index so the shape is stable between renders.
+ */
+export function tornClip(teeth = 22, depth = 2.6) {
+  const jitter = (i: number) => {
+    const n = Math.sin(i * 12.9898) * 43758.5453;
+    return n - Math.floor(n); // deterministic 0..1
+  };
+  const pts: string[] = [];
+  for (let i = 0; i <= teeth; i++) {
+    const x = ((i / teeth) * 100 + (jitter(i) - 0.5) * 1.6).toFixed(2);
+    const y = i % 2 === 0 ? (jitter(i + 7) * 0.5).toFixed(2) : (depth * (0.55 + jitter(i) * 0.75)).toFixed(2);
+    pts.push(`${x}% ${y}%`);
+  }
+  pts.push('100% 100%', '0% 100%');
+  return `polygon(${pts.join(',')})`;
+}
+
 export default function NotepadPage({
   title,
   icon,
@@ -20,6 +40,8 @@ export default function NotepadPage({
   dragHandle,
   size,
   onResize,
+  grabHandle,
+  lifted = false,
 }: {
   title?: string;
   icon?: IconName;
@@ -32,6 +54,8 @@ export default function NotepadPage({
   dragHandle?: DragHandle;
   size?: { w: number; h: number };
   onResize?: (size: { w: number; h: number }) => void;
+  grabHandle?: (e: React.PointerEvent) => void;
+  lifted?: boolean;
 }) {
   const [dragOver, setDragOver] = useState(false);
   const resizeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -68,7 +92,7 @@ export default function NotepadPage({
       className={`relative ${fill ? 'w-full h-full' : 'shrink-0'}`}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <SpiralRings count={ringCount} />
+      {!lifted && <SpiralRings count={ringCount} />}
       <div
         onDragOver={
           dragHandle
@@ -99,6 +123,7 @@ export default function NotepadPage({
         style={{
           borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px',
           ...(onResize ? { width: size?.w ?? 288, height: size?.h ?? 320 } : {}),
+          ...(lifted ? { clipPath: tornClip() } : {}),
         }}
       >
         {/* perforation: the tear-off strip sits flush under the rings */}
@@ -112,14 +137,17 @@ export default function NotepadPage({
                 }
               : undefined
           }
-          title={dragHandle ? 'Drag this edge onto another page to fold them together' : undefined}
-          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b-2 border-dashed border-[var(--color-ink-soft)]/40 ${
-            dragHandle
+          onPointerDown={grabHandle}
+          title={grabHandle ? 'Tear it off and move it anywhere' : undefined}
+          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b-2 touch-none ${
+            lifted ? 'border-transparent' : 'border-dashed border-[var(--color-ink-soft)]/40'
+          } ${
+            grabHandle
               ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40'
               : ''
           }`}
         >
-          {dragHandle && (
+          {(grabHandle || dragHandle) && (
             <span className="text-[var(--color-ink-soft)]/50 text-[10px] tracking-[0.3em] leading-none select-none">
               ⠿⠿⠿
             </span>
