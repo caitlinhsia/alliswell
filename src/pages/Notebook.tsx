@@ -5,6 +5,7 @@ import { useAppStore, type DeskPageKey, type FrontWidgetKey } from '../store/use
 import NotepadPage from '../components/NotepadPage';
 import StickyLayer from '../components/StickyLayer';
 import Icon, { type IconName } from '../components/Icon';
+import AccountMenu from '../components/AccountMenu';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -159,6 +160,8 @@ export default function Notebook() {
             {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <AccountMenu />
         <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]/90 backdrop-blur-sm">
           <button
             onClick={() => setHomeViewMode('flip')}
@@ -180,6 +183,7 @@ export default function Notebook() {
           >
             <Icon name="desk" /> all together
           </button>
+        </div>
         </div>
       </div>
 
