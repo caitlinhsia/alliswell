@@ -9,7 +9,7 @@ export default function Panel({
 }) {
   return (
     <div
-      className={`bg-[var(--color-paper)] rounded-2xl border border-[var(--color-paper-line)] shadow-[0_2px_10px_rgba(51,41,31,0.06)] p-5 ${className}`}
+      className={`bg-[var(--color-paper)] rounded-sm border border-[var(--color-paper-line)] p-5 ${className}`}
     >
       {children}
     </div>

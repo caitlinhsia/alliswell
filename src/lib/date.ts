@@ -6,7 +6,7 @@ export function todayStr() {
 
 export function greeting() {
   const h = new Date().getHours();
-  if (h < 5) return 'Still up?';
+  if (h < 5) return 'Still up';
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   if (h < 21) return 'Good evening';

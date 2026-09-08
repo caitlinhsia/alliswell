@@ -47,7 +47,7 @@ export default function AccountMenu() {
         </button>
 
         {open && session && (
-          <div className="absolute right-0 top-full mt-1.5 z-50 w-60 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-xl p-2">
+          <div className="absolute right-0 top-full mt-1.5 z-50 w-60 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-xl p-2">
             <p className="font-note text-xs text-[var(--color-ink-soft)] px-2 pt-1 pb-2 break-all">
               {session.user.email}
               {statusLabel && <span className="block mt-0.5">{statusLabel}</span>}
@@ -142,7 +142,7 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-lg px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
+              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
           </label>
           <label className="font-note text-xs text-[var(--color-ink-soft)]">
@@ -152,7 +152,7 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
-              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-lg px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
+              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
           </label>
 
@@ -162,7 +162,7 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={busy}
-            className="font-note bg-[var(--color-note-denim)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+            className="font-note bg-[var(--color-ink)] text-[var(--color-paper)] px-4 py-2 rounded-sm hover:bg-[var(--color-accent)] transition-colors disabled:opacity-50"
           >
             {busy ? 'one moment…' : mode === 'in' ? 'Sign in' : 'Sign up'}
           </button>

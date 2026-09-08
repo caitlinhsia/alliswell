@@ -72,14 +72,14 @@ export default function StudyContent() {
 
   return (
     <>
-      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
+      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">
         {todayMinutes} minutes focused today
       </p>
 
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
       <div className="grid md:grid-cols-2 gap-5">
         <Panel>
-          <h3 className="font-hand text-2xl mb-3">Focus timer</h3>
+          <h3 className="font-display text-xl mb-3">Focus timer</h3>
           <div className="flex gap-2 mb-4 flex-wrap">
             {subjects.map((s) => (
               <button
@@ -141,7 +141,7 @@ export default function StudyContent() {
         </Panel>
 
         <Panel>
-          <h3 className="font-hand text-2xl mb-3">Subjects</h3>
+          <h3 className="font-display text-xl mb-3">Subjects</h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -156,7 +156,7 @@ export default function StudyContent() {
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
               placeholder="New subject"
-              className="flex-1 font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sage)]"
+              className="flex-1 font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
             <button type="submit" className="font-note bg-[var(--color-tab-sage)] px-3 py-1.5 rounded-lg">
               Add
@@ -184,7 +184,7 @@ export default function StudyContent() {
             ))}
           </ul>
 
-          <h4 className="font-hand text-xl mb-2">
+          <h4 className="font-display text-lg mb-2">
             To-dos {subjects.find((s) => s.id === activeSubjectId)?.name && `· ${subjects.find((s) => s.id === activeSubjectId)?.name}`}
           </h4>
           <form
@@ -201,7 +201,7 @@ export default function StudyContent() {
               onChange={(e) => setNewTodo(e.target.value)}
               placeholder="Add a to-do"
               disabled={!activeSubjectId}
-              className="flex-1 font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-1.5 disabled:opacity-40"
+              className="flex-1 font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-1.5 disabled:opacity-40"
             />
             <button
               type="submit"
@@ -264,7 +264,7 @@ export default function StudyContent() {
       </div>
 
       <Panel className="mt-5">
-        <h3 className="font-hand text-2xl mb-3">Recent sessions</h3>
+        <h3 className="font-display text-xl mb-3">Recent sessions</h3>
         {recentSessions.length === 0 ? (
           <p className="font-note text-sm text-[var(--color-ink-soft)]">
             Completed sessions will show up here.

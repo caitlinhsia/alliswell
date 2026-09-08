@@ -91,7 +91,7 @@ export default function ScheduleContent() {
 
   return (
     <>
-      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
+      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">
         Drag anything to another day to reschedule it · click a task to rename
       </p>
 
@@ -106,7 +106,7 @@ export default function ScheduleContent() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Yoga, essay draft, dentist"
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
+                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2 min-w-[200px] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -119,7 +119,7 @@ export default function ScheduleContent() {
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -128,7 +128,7 @@ export default function ScheduleContent() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -136,7 +136,7 @@ export default function ScheduleContent() {
                 <select
                   value={formSubjectId}
                   onChange={(e) => setFormSubjectId(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
                 >
                   <option value="">none</option>
                   {subjects.map((s) => (
@@ -151,7 +151,7 @@ export default function ScheduleContent() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as 'task' | 'event')}
-                  className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2"
+                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
                 >
                   <option value="task">Task</option>
                   <option value="event">Event</option>
@@ -159,7 +159,7 @@ export default function ScheduleContent() {
               </div>
               <button
                 type="submit"
-                className="font-note bg-[var(--color-note-denim)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+                className="font-note bg-[var(--color-ink)] text-[var(--color-paper)] px-4 py-2 rounded-sm hover:bg-[var(--color-accent)] transition-colors"
               >
                 + Add
               </button>
@@ -175,7 +175,7 @@ export default function ScheduleContent() {
         ) : (
           <button
             onClick={() => setFormOpen(true)}
-            className="font-note text-sm px-3 py-1.5 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:bg-[var(--color-paper-deep)] hover:text-[var(--color-ink)]"
+            className="font-note text-sm px-3 py-1.5 rounded-sm border border-[var(--color-paper-line)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
             + add with date, time, subject, or event type
           </button>
@@ -183,25 +183,25 @@ export default function ScheduleContent() {
       </div>
 
       <div className="mb-3 shrink-0">
-        <p className="font-hand text-2xl text-center mb-2">
+        <p className="font-display text-2xl text-center mb-3">
           {format(weekStart, 'MMM d')} – {format(addDays(weekStart, 6), 'MMM d')}
         </p>
         <div className="flex items-center justify-center gap-2">
           <button
             onClick={() => setWeekOffset((w) => w - 1)}
-            className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
+            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
             ← prev
           </button>
           <button
             onClick={() => setWeekOffset(0)}
-            className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
+            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
             today
           </button>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
-            className="font-note text-sm px-3 py-1 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]"
+            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
             next →
           </button>
@@ -232,18 +232,18 @@ export default function ScheduleContent() {
                 const id = e.dataTransfer.getData('text/plain');
                 if (id) moveScheduleItem(id, dayStr);
               }}
-              className={`rounded-2xl border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col transition-colors ${
+              className={`rounded-sm border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col transition-colors ${
                 isDropTarget
-                  ? 'border-[var(--color-note-denim)] border-2 bg-[var(--color-note-denim)]/10'
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40'
                   : isToday
-                  ? 'border-[var(--color-note-denim)] bg-[var(--color-paper)]'
+                  ? 'border-[var(--color-ink-faint)] bg-[var(--color-paper)]'
                   : 'border-[var(--color-paper-line)] bg-[var(--color-paper)]/70'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-note text-xs text-[var(--color-ink-soft)]">{format(day, 'EEE')}</p>
-                  <p className="font-hand text-xl mb-2">{format(day, 'd')}</p>
+                  <p className="font-display text-lg mb-2">{format(day, 'd')}</p>
                 </div>
                 {!isAdding && (
                   <button

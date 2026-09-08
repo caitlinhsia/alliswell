@@ -38,7 +38,7 @@ export default function MergeDialog() {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => void resolve('local')}
-            className="text-left font-note border border-[var(--color-paper-line)] rounded-xl px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
+            className="text-left font-note border border-[var(--color-paper-line)] rounded-sm px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
           >
             <span className="block text-[var(--color-ink)]">Keep what is on this device</span>
             <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">
@@ -48,7 +48,7 @@ export default function MergeDialog() {
 
           <button
             onClick={() => void resolve('cloud')}
-            className="text-left font-note border border-[var(--color-paper-line)] rounded-xl px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
+            className="text-left font-note border border-[var(--color-paper-line)] rounded-sm px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
           >
             <span className="block text-[var(--color-ink)]">Keep what is in the account</span>
             <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">

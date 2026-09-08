@@ -145,48 +145,47 @@ export default function Notebook() {
   }
 
   return (
-    <div className="h-screen overflow-hidden desk-background p-3 md:p-4 flex flex-col">
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-2 shrink-0">
-        <div className="flex items-center gap-3">
+    <div className="h-screen overflow-hidden desk-background flex flex-col">
+      <header className="shrink-0 flex items-center justify-between gap-4 flex-wrap px-5 md:px-8 h-14 border-b border-[var(--color-paper-line)]">
+        <div className="flex items-baseline gap-4 min-w-0">
           <button
             onClick={goToCover}
             aria-label="Go to cover"
-            title="Go to cover"
-            className="font-note text-sm px-3 py-1.5 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)]/90 backdrop-blur-sm text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] flex items-center gap-1.5 transition-colors"
+            className="font-display text-[1.35rem] leading-none text-[var(--color-ink)] hover:text-[var(--color-accent)] transition-colors"
           >
-            <Icon name="cover" /> cover
+            allisw3ll
           </button>
-          <p className="font-hand text-lg text-[var(--color-ink-soft)]">
-            {greeting()} — {format(new Date(), 'EEEE, MMMM d')}
-          </p>
+          <span className="label hidden sm:inline">{format(new Date(), 'EEE d MMM')}</span>
         </div>
-        <div className="flex items-center gap-2">
-        <AccountMenu />
-        <div className="inline-flex rounded-full border border-[var(--color-paper-line)] p-1 bg-[var(--color-paper)]/90 backdrop-blur-sm">
-          <button
-            onClick={() => setHomeViewMode('flip')}
-            className={`font-note text-sm px-3 py-1 rounded-full transition-colors ${
-              homeViewMode === 'flip'
-                ? 'bg-[var(--color-tab-lavender)] text-[var(--color-ink)]'
-                : 'text-[var(--color-ink-soft)]'
-            }`}
-          >
-            <Icon name="flip" /> flip through
-          </button>
-          <button
-            onClick={() => setHomeViewMode('desk')}
-            className={`font-note text-sm px-3 py-1 rounded-full transition-colors ${
-              homeViewMode === 'desk'
-                ? 'bg-[var(--color-tab-lavender)] text-[var(--color-ink)]'
-                : 'text-[var(--color-ink-soft)]'
-            }`}
-          >
-            <Icon name="desk" /> all together
-          </button>
-        </div>
-        </div>
-      </div>
 
+        <div className="flex items-center gap-5">
+          <nav className="flex items-center gap-4">
+            <button
+              onClick={() => setHomeViewMode('flip')}
+              className={`label transition-colors ${
+                homeViewMode === 'flip'
+                  ? 'text-[var(--color-ink)]'
+                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
+              }`}
+            >
+              Pages
+            </button>
+            <button
+              onClick={() => setHomeViewMode('desk')}
+              className={`label transition-colors ${
+                homeViewMode === 'desk'
+                  ? 'text-[var(--color-ink)]'
+                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
+              }`}
+            >
+              Desk
+            </button>
+          </nav>
+          <AccountMenu />
+        </div>
+      </header>
+
+      <div className="flex-1 min-h-0 flex flex-col px-5 md:px-8 pt-5 pb-3">
       {homeViewMode === 'flip' ? (
         <FlipView index={flipIndex} setIndex={setFlipIndex} direction={direction} setDirection={setDirection} />
       ) : (
@@ -194,6 +193,7 @@ export default function Notebook() {
           <DeskView onOpenFull={goToPage} />
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -216,18 +216,48 @@ function FlipView({
     setIndex((index + delta + FLIP_ORDER.length) % FLIP_ORDER.length);
   }
 
+  // Arrow keys turn pages; number keys jump straight to one. Ignored while
+  // typing so they never steal a keystroke from a note or an input.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        go(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        go(-1);
+      } else if (/^[1-7]$/.test(e.key)) {
+        const target = parseInt(e.key, 10) - 1;
+        if (target < FLIP_ORDER.length) {
+          e.preventDefault();
+          setDirection(target > index ? 1 : -1);
+          setIndex(target);
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col items-center">
       <div
         className="relative w-full max-w-[1600px] mx-auto flex-1 min-h-0"
         style={{ perspective: '2200px', perspectiveOrigin: 'center top' }}
       >
-        {/* ambient shadow grounding the book on the desk */}
-        <div
-          className="absolute left-1/2 -translate-x-1/2 -bottom-5 w-[85%] h-14 rounded-[50%] bg-black/25 blur-2xl pointer-events-none"
-          aria-hidden
-        />
-
         <AnimatePresence custom={direction} initial={false}>
           <motion.div
             key={page}
@@ -256,17 +286,26 @@ function FlipView({
 
       </div>
 
-      <div className="flex items-center gap-4 mt-3 shrink-0">
-        <button
-          onClick={() => go(-1)}
-          aria-label="Previous page"
-          title="Previous page"
-          className="w-10 h-10 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] text-xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-        >
-          ↑
-        </button>
+      <div className="shrink-0 w-full max-w-[1600px] mx-auto mt-3 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => go(-1)}
+            aria-label="Previous page"
+            className="keycap hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
+          >
+            ←
+          </button>
+          <button
+            onClick={() => go(1)}
+            aria-label="Next page"
+            className="keycap hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
+          >
+            →
+          </button>
+          <span className="label ml-1">navigate</span>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="hidden md:flex items-center gap-4">
           {FLIP_ORDER.map((p, i) => (
             <button
               key={p}
@@ -275,21 +314,21 @@ function FlipView({
                 setIndex(i);
               }}
               aria-label={`Go to ${p} page`}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                i === index ? 'bg-[var(--color-ink)]' : 'bg-[var(--color-paper-line)]'
+              aria-current={i === index}
+              className={`label transition-colors ${
+                i === index
+                  ? 'text-[var(--color-accent)]'
+                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
               }`}
-            />
+            >
+              {p === 'front' ? 'cover' : PAGE_META[p as DeskPageKey].title}
+            </button>
           ))}
         </div>
 
-        <button
-          onClick={() => go(1)}
-          aria-label="Next page"
-          title="Next page"
-          className="w-10 h-10 rounded-full border border-[var(--color-paper-line)] bg-[var(--color-paper)] text-xl leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-soft)] shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-        >
-          ↓
-        </button>
+        <span className="label">
+          {String(index + 1).padStart(2, '0')} / {String(FLIP_ORDER.length).padStart(2, '0')}
+        </span>
       </div>
     </div>
   );
@@ -506,95 +545,95 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
     (k) => !frontPageWidgets.includes(k)
   );
 
-  return (
-    <div
-      className={`flex flex-col items-center text-center ${
-        compact
-          ? 'gap-4'
-          : // scroll inside the page instead of spilling past its bottom edge once
-            // enough widgets are added; px/pt leave room for the widgets' corner buttons
-            'h-full min-h-0 overflow-y-auto overflow-x-hidden gap-8 pt-[6%] pb-10 px-4'
-      }`}
-    >
-      <div className="shrink-0">
-        <p
-          className={`font-hand leading-tight text-[var(--color-ink)] ${
-            compact ? 'text-4xl' : 'text-6xl md:text-7xl'
-          }`}
-        >
-          allisw3ll
-        </p>
-        <div
-          className={`font-hand text-[var(--color-ink-soft)] flex items-center justify-center gap-2 mt-2 ${
-            compact ? 'text-xl' : 'text-3xl'
-          }`}
-        >
-          with
-          <input
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            placeholder="your name"
-            size={Math.max(userName.length, 8)}
-            className={`font-hand bg-transparent border-b border-dashed border-[var(--color-ink-soft)]/50 focus:border-[var(--color-ink)] outline-none text-center placeholder:text-[var(--color-ink-soft)]/50 ${
-              compact ? 'text-xl' : 'text-3xl'
-            }`}
-          />
-        </div>
-      </div>
+  const weekOfYear = Math.ceil(
+    ((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 +
+      new Date(now.getFullYear(), 0, 1).getDay() +
+      1) /
+      7
+  );
 
-      <div className="shrink-0">
-        <p
-          className={`font-hand tabular-nums text-[var(--color-ink)] ${
-            compact ? 'text-3xl' : 'text-6xl md:text-7xl'
-          }`}
-        >
-          {format(now, 'h:mm')}
-          <span className={compact ? 'text-base text-[var(--color-ink-soft)]' : 'text-2xl md:text-3xl text-[var(--color-ink-soft)]'}>
-            {format(now, ' a')}
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="font-display text-2xl leading-tight">
+            {greeting()},{' '}
+            <span className="italic text-[var(--color-accent)]">{userName || 'you'}</span>
+          </p>
+          <p className="label mt-1">{format(now, 'EEE d MMM')}</p>
+        </div>
+        <p className="font-mono-num text-3xl text-[var(--color-ink)]">
+          {format(now, 'HH:mm')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden pr-1">
+      {/* masthead */}
+      <div className="flex items-start justify-between gap-8 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="font-display font-light text-[clamp(2.1rem,5vw,3.4rem)] leading-[1.08] tracking-[-0.015em]">
+            {greeting()},{' '}
+            <input
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="you"
+              size={Math.max(userName.length, 4)}
+              aria-label="Your name"
+              className="font-display italic text-[var(--color-accent)] bg-transparent border-b border-transparent hover:border-[var(--color-accent)]/30 focus:border-[var(--color-accent)] outline-none transition-colors"
+            />
+          </h1>
+          <p className="font-mono text-[0.78rem] text-[var(--color-ink-soft)] mt-2 tracking-wide">
+            {format(now, 'EEEE, MMMM d')}
+            <span className="text-[var(--color-ink-faint)]">
+              {'  ·  '}week {weekOfYear} of 52
+            </span>
+          </p>
+        </div>
+
+        <p className="font-mono-num text-[clamp(1.9rem,4vw,2.6rem)] leading-none text-[var(--color-ink)]">
+          {format(now, 'HH:mm')}
+          <span className="text-[0.42em] text-[var(--color-ink-faint)] ml-2 align-top tracking-widest">
+            {format(now, 'ss')}
           </span>
         </p>
-        <p className={`font-note text-[var(--color-ink-soft)] mt-1 ${compact ? 'text-xs' : 'text-lg'}`}>
-          {format(now, compact ? 'MMM d, yyyy' : 'EEEE, MMMM d, yyyy')}
-        </p>
       </div>
 
+      {/* widgets */}
       {frontPageWidgets.length > 0 && (
-        <div className="flex flex-wrap items-start justify-center gap-4 shrink-0">
+        <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
           {frontPageWidgets.map((key) => (
-            <div
-              key={key}
-              className={`relative group ${
-                compact ? '' : 'border border-[var(--color-paper-line)] rounded-xl bg-[var(--color-paper)]/70 p-4'
-              }`}
-            >
-              {!compact && (
+            <section key={key} className="group min-w-0">
+              <div className="rule-row mb-3">
+                <span className="label whitespace-nowrap">{FRONT_WIDGET_META[key].label}</span>
                 <button
                   onClick={() => removeFrontWidget(key)}
                   aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
-                  className="absolute -top-3 -right-3 z-10 w-7 h-7 rounded-full bg-[var(--color-paper)] border border-[var(--color-paper-line)] text-sm text-[var(--color-ink-soft)]/60 hover:text-red-500 transition-colors flex items-center justify-center"
+                  className="label order-last ml-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity"
                 >
-                  ×
+                  remove
                 </button>
-              )}
-              {renderFrontWidget(key, compact)}
-            </div>
+              </div>
+              {renderFrontWidget(key, false)}
+            </section>
           ))}
         </div>
       )}
 
-      {!compact && availableWidgets.length > 0 && (
-        <div className="relative shrink-0">
+      {availableWidgets.length > 0 && (
+        <div className="relative mt-10 pb-6">
           <button
             onClick={() => setPickerOpen((o) => !o)}
-            aria-label="Add widget"
-            className="w-10 h-10 rounded-full border border-dashed border-[var(--color-ink-soft)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink)] flex items-center justify-center text-xl leading-none transition-colors"
+            className="label hover:text-[var(--color-ink)] transition-colors"
           >
-            +
+            + add a section
           </button>
           {pickerOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setPickerOpen(false)} />
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-lg p-2 flex flex-col gap-1 w-56">
+              <div className="absolute top-7 left-0 z-20 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm p-1.5 flex flex-col min-w-[190px]">
                 {availableWidgets.map((key) => (
                   <button
                     key={key}
@@ -602,9 +641,9 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
                       addFrontWidget(key);
                       setPickerOpen(false);
                     }}
-                    className="font-note text-sm text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] flex items-center gap-2"
+                    className="font-body text-sm text-left px-2.5 py-1.5 hover:bg-[var(--color-paper-deep)] flex items-center gap-2.5 transition-colors"
                   >
-                    <Icon name={FRONT_WIDGET_META[key].icon} className="text-[var(--color-ink-soft)]" />
+                    <Icon name={FRONT_WIDGET_META[key].icon} size={15} className="text-[var(--color-ink-faint)]" />
                     {FRONT_WIDGET_META[key].label}
                   </button>
                 ))}
@@ -630,12 +669,12 @@ function MoodWidget({ compact }: { compact: boolean }) {
           key={m.value}
           onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
           title={m.label}
-          className={`rounded-full border font-note flex flex-col items-center justify-center leading-none transition-colors ${
-            compact ? 'w-9 h-9 text-[10px]' : 'w-14 h-14 text-xs'
+          className={`rounded-sm border font-body flex flex-col items-center justify-center gap-0.5 leading-none transition-colors ${
+            compact ? 'w-11 h-9 text-[10px]' : 'w-16 h-14 text-[0.8rem]'
           } ${
             todayEntry?.mood === m.value
               ? 'border-[var(--color-ink)]'
-              : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
+              : 'border-[var(--color-paper-line)] hover:border-[var(--color-ink-faint)]'
           }`}
           style={
             todayEntry?.mood === m.value ? { background: m.tone } : undefined
@@ -694,7 +733,7 @@ function MiniSchedule() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="quick add..."
-          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
         />
         <button type="submit" className="font-note text-sm bg-[var(--color-tab-sky)] px-2.5 rounded-lg">
           +
@@ -758,7 +797,7 @@ function MiniTodo() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="quick add..."
-          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-tab-sky)]"
+          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
         />
         <button type="submit" className="font-note text-sm bg-[var(--color-tab-sky)] px-2.5 rounded-lg">
           +

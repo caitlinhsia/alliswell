@@ -31,7 +31,7 @@ export default function ColorPicker({
         <>
           <span className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
           <span
-            className="absolute z-40 top-full left-1/2 -translate-x-1/2 mt-1.5 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1.5 w-[168px]"
+            className="absolute z-40 top-full left-1/2 -translate-x-1/2 mt-1.5 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-lg p-2 grid grid-cols-6 gap-1.5 w-[168px]"
             onPointerDown={(e) => e.stopPropagation()}
           >
             {NOTE_COLOR_LIST.map((c) => (

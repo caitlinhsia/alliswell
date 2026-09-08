@@ -101,7 +101,7 @@ export default function DateField({
         <div
           ref={popRef}
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: POP_W }}
-          className="z-[60] bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-xl p-3"
+          className="z-[60] bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-xl p-3"
         >
           <div className="flex items-center justify-between mb-2">
             <button

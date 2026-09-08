@@ -114,14 +114,14 @@ export default function NotepadPage({
               }
             : undefined
         }
-        className={`relative bg-[#fffdf8] border-[3px] pt-7 px-5 pb-5 shadow-[5px_6px_0_rgba(51,41,31,0.10)] transition-colors ${
-          dragOver ? 'border-[var(--color-tab-sky)]' : 'border-[var(--color-ink)]'
-        } ${fill ? 'w-full h-full flex flex-col overflow-hidden lined-paper' : ''} ${
+        className={`relative bg-[var(--color-paper)] border pt-8 px-7 pb-6 transition-colors ${
+          dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'
+        } ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
           onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
         ref={boxRef}
         style={{
-          borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px',
+          borderRadius: 3,
           ...(onResize ? { width: size?.w ?? 288, height: size?.h ?? 320 } : {}),
           ...(lifted ? { clipPath: tornClip() } : {}),
         }}
@@ -139,8 +139,8 @@ export default function NotepadPage({
           }
           onPointerDown={grabHandle}
           title={grabHandle ? 'Tear it off and move it anywhere' : undefined}
-          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b-2 touch-none ${
-            lifted ? 'border-transparent' : 'border-dashed border-[var(--color-ink-soft)]/40'
+          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b touch-none ${
+            lifted ? 'border-transparent' : 'border-[var(--color-paper-line)]'
           } ${
             grabHandle
               ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40'
@@ -148,8 +148,8 @@ export default function NotepadPage({
           }`}
         >
           {(grabHandle || dragHandle) && (
-            <span className="text-[var(--color-ink-soft)]/50 text-[10px] tracking-[0.3em] leading-none select-none">
-              ⠿⠿⠿
+            <span className="font-mono text-[var(--color-ink-faint)] text-[9px] tracking-[0.35em] leading-none select-none">
+              ｜｜｜
             </span>
           )}
         </div>
@@ -177,8 +177,8 @@ export default function NotepadPage({
           </span>
         )}
         {title && (
-          <h2 className="font-sans font-semibold tracking-tight text-2xl text-[var(--color-ink)] mb-3 flex items-center gap-2">
-            {icon && <Icon name={icon} size={19} className="text-[var(--color-ink-soft)]" />}
+          <h2 className="font-display font-normal text-[1.7rem] leading-tight text-[var(--color-ink)] mb-4 flex items-center gap-2.5">
+            {icon && <Icon name={icon} size={17} className="text-[var(--color-ink-faint)]" />}
             {title}
           </h2>
         )}

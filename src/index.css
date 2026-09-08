@@ -1,91 +1,70 @@
 @import 'tailwindcss';
 
+/* Newsreader — editorial serif, carries the display voice and body copy.
+   JetBrains Mono — every number, label and key hint. Two faces, nothing else. */
 @font-face {
-  font-family: 'Caveat';
+  font-family: 'Newsreader';
   font-style: normal;
-  font-weight: 500;
+  font-weight: 300 600;
   font-display: swap;
-  src: url('./assets/fonts/caveat-500.woff2') format('woff2');
+  src: url('./assets/fonts/newsreader-var.woff2') format('woff2-variations');
 }
 @font-face {
-  font-family: 'Caveat';
-  font-style: normal;
-  font-weight: 600;
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 300 500;
   font-display: swap;
-  src: url('./assets/fonts/caveat-600.woff2') format('woff2');
+  src: url('./assets/fonts/newsreader-italic-var.woff2') format('woff2-variations');
 }
 @font-face {
-  font-family: 'Caveat';
+  font-family: 'JetBrains Mono';
   font-style: normal;
-  font-weight: 700;
+  font-weight: 400 600;
   font-display: swap;
-  src: url('./assets/fonts/caveat-700.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Patrick Hand';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('./assets/fonts/patrick-hand-400.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('./assets/fonts/inter-400.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('./assets/fonts/inter-500.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('./assets/fonts/inter-600.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('./assets/fonts/inter-700.woff2') format('woff2');
+  src: url('./assets/fonts/jetbrains-mono-var.woff2') format('woff2-variations');
 }
 
 @theme {
-  --font-hand: 'Caveat', cursive;
-  --font-note: 'Patrick Hand', cursive;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* one serif, one mono */
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-paper: #faf6ec;
-  --color-paper-deep: #f2e9d8;
-  --color-paper-line: #e6dcc6;
-  --color-ink: #33291f;
-  --color-ink-soft: #6b5f4f;
+  /* legacy aliases so existing markup picks up the new voice */
+  --font-hand: 'Newsreader', Georgia, serif;
+  --font-note: 'Newsreader', Georgia, serif;
+  --font-sans: 'Newsreader', Georgia, serif;
 
-  --color-tab-sage: #8a9c8a;
-  --color-tab-sky: #93acc4;
-  --color-tab-blush: #cf9f9a;
-  --color-tab-butter: #cbb27a;
-  --color-tab-lavender: #a89bbd;
+  /* ground → ink, warm and low contrast */
+  --color-paper: #f4f0e7;
+  --color-paper-deep: #eae5d9;
+  --color-paper-line: #ddd6c7;
+  --color-ink: #221f1b;
+  --color-ink-soft: #6d665b;
+  --color-ink-faint: #a49b8c;
 
-  --color-note-ochre: #d9c17e;
-  --color-note-clay: #c98f72;
-  --color-note-rust: #b5705c;
-  --color-note-rose: #cf9c9c;
-  --color-note-plum: #a8809b;
-  --color-note-lilac: #a99cc4;
-  --color-note-denim: #7f9bb8;
-  --color-note-teal: #7fa6a3;
-  --color-note-sage: #9aae8b;
-  --color-note-moss: #7f8f68;
-  --color-note-sand: #cdb894;
-  --color-note-slate: #90969e;
+  /* one accent, used sparingly */
+  --color-accent: #b0533a;
+  --color-accent-soft: #e8d9d0;
+
+  --color-tab-sage: #8d9c86;
+  --color-tab-sky: #8199ad;
+  --color-tab-blush: #b0533a;
+  --color-tab-butter: #c2a367;
+  --color-tab-lavender: #9b90ab;
+
+  --color-note-ochre: #cfb473;
+  --color-note-clay: #c08768;
+  --color-note-rust: #b0533a;
+  --color-note-rose: #c2938f;
+  --color-note-plum: #9b7a8f;
+  --color-note-lilac: #9b90ab;
+  --color-note-denim: #7690a6;
+  --color-note-teal: #789a97;
+  --color-note-sage: #8d9c86;
+  --color-note-moss: #75845f;
+  --color-note-sand: #c4b193;
+  --color-note-slate: #8b8f95;
 }
 
 html,
@@ -98,8 +77,49 @@ body {
   margin: 0;
   background: var(--color-paper);
   color: var(--color-ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tiny letterspaced caps in mono — the workhorse label of this design. */
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+/* A label followed by a hairline that runs out to fill the row. */
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.rule-row::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-paper-line);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard hint pips, as in the footer of the reference. */
+.keycap {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 4px;
+  color: var(--color-ink-soft);
 }
 
 .font-hand {
@@ -121,7 +141,7 @@ body {
     to bottom,
     transparent,
     transparent 30px,
-    var(--color-paper-line) 31px
+    rgba(221, 214, 199, 0.5) 31px
   );
   background-position-y: 4px;
 }
@@ -142,17 +162,11 @@ body {
   pointer-events: none;
 }
 
+/* Flat cream ground with a whisper of dot texture — no vignette, no gradient. */
 .desk-background {
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      rgba(51, 41, 31, 0.025) 0px,
-      rgba(51, 41, 31, 0.025) 1px,
-      transparent 1px,
-      transparent 4px
-    ),
-    radial-gradient(ellipse 90% 70% at 50% 26%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
-    radial-gradient(ellipse 140% 120% at 50% 50%, #f4ecd9 0%, #e7d8b0 45%, #cdb787 80%, #b9a476 100%);
+  background-color: var(--color-paper);
+  background-image: radial-gradient(rgba(34, 31, 27, 0.055) 1px, transparent 1px);
+  background-size: 20px 20px;
   background-attachment: fixed;
 }
 
@@ -163,6 +177,9 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--color-paper-line);
   border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-faint);
 }
 ::-webkit-scrollbar-track {
   background: transparent;

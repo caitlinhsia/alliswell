@@ -71,7 +71,7 @@ export default function TodoContent() {
 
   return (
     <>
-      <p className="font-hand text-xl text-[var(--color-ink-soft)] -mt-2 mb-4">
+      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">
         Type it plainly — "essay draft p1 mon" sets the priority and the day for you
       </p>
 
@@ -83,7 +83,7 @@ export default function TodoContent() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="e.g. finish essay draft p1 mon"
-              className="font-note border border-[var(--color-paper-line)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-note-denim)]"
+              className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -111,7 +111,7 @@ export default function TodoContent() {
           </div>
           <button
             type="submit"
-            className="font-note bg-[var(--color-note-denim)] text-[var(--color-ink)] px-4 py-2 rounded-lg hover:opacity-90"
+            className="font-note bg-[var(--color-ink)] text-[var(--color-paper)] px-4 py-2 rounded-sm hover:bg-[var(--color-accent)] transition-colors"
           >
             Add
           </button>
@@ -138,7 +138,7 @@ export default function TodoContent() {
               return (
                 <li
                   key={t.id}
-                  className="group flex items-center gap-3 font-note text-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl px-3 py-2.5"
+                  className="group flex items-center gap-3 font-note text-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm px-3 py-2.5"
                 >
                   <input
                     type="checkbox"

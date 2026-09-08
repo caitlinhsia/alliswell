@@ -38,7 +38,7 @@ export default function StickyLayer({ page }: { page: StickyPage }) {
         {pickerOpen && (
           <>
             <span className="fixed inset-0 z-30" onClick={() => setPickerOpen(false)} />
-            <div className="absolute bottom-12 right-0 z-40 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1.5 w-[168px]">
+            <div className="absolute bottom-12 right-0 z-40 bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-lg p-2 grid grid-cols-6 gap-1.5 w-[168px]">
               {NOTE_COLOR_LIST.map((c) => (
                 <button
                   key={c}

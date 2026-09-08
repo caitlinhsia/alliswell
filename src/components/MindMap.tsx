@@ -280,7 +280,7 @@ export default function MindMap() {
                     onPointerDown={(e) => handleNodePointerDown(e, n)}
                   >
                     <div
-                      className={`w-full h-full flex items-center gap-1.5 rounded-xl shadow px-2.5 overflow-hidden ${
+                      className={`w-full h-full flex items-center gap-1.5 rounded-sm shadow px-2.5 overflow-hidden ${
                         isSelected ? 'ring-2 ring-offset-1 ring-[var(--color-ink)]' : ''
                       } ${isRoot ? 'border-2 font-bold' : 'border'}`}
                       style={{ background: NOTE_COLORS[n.color], borderColor: 'var(--color-ink)' }}
@@ -376,7 +376,7 @@ export default function MindMap() {
             </button>
 
             {libraryOpen && (
-              <div className="absolute right-0 top-10 w-72 max-h-[320px] overflow-y-auto bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-xl shadow-xl p-2">
+              <div className="absolute right-0 top-10 w-72 max-h-[320px] overflow-y-auto bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-xl p-2">
                 <p className="font-note text-[11px] text-[var(--color-ink-soft)] px-1.5 pb-1.5">
                   {selectedId
                     ? 'click one to branch it off the selected bubble'
@@ -415,7 +415,7 @@ export default function MindMap() {
 
         <div
           data-no-pan
-          className="absolute bottom-3 right-16 flex flex-col gap-1 bg-[var(--color-paper)]/90 rounded-xl border border-[var(--color-paper-line)] p-1 z-30"
+          className="absolute bottom-3 right-16 flex flex-col gap-1 bg-[var(--color-paper)]/90 rounded-sm border border-[var(--color-paper-line)] p-1 z-30"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
