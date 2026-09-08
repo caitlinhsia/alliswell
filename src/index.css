@@ -35,17 +35,18 @@
   --font-note: 'Newsreader', Georgia, serif;
   --font-sans: 'Newsreader', Georgia, serif;
 
-  /* ground → ink, warm and low contrast */
-  --color-paper: #f4f0e7;
-  --color-paper-deep: #eae5d9;
-  --color-paper-line: #ddd6c7;
-  --color-ink: #221f1b;
-  --color-ink-soft: #6d665b;
-  --color-ink-faint: #a49b8c;
+/* ground → ink: warm off-white, sepia-leaning. Low contrast, but never grey —
+     the warmth is where the character lives. */
+  --color-paper: #fbf9f3;
+  --color-paper-deep: #f3efe4;
+  --color-paper-line: #e5e0d3;
+  --color-ink: #26231d;
+  --color-ink-soft: #776f62;
+  --color-ink-faint: #b3ab9b;
 
-  /* one accent, used sparingly */
-  --color-accent: #b0533a;
-  --color-accent-soft: #e8d9d0;
+  /* one accent — terracotta, warm enough to read as ink on old paper */
+  --color-accent: #9c5233;
+  --color-accent-soft: #f0e5dd;
 
   --color-tab-sage: #8d9c86;
   --color-tab-sky: #8199ad;
@@ -86,12 +87,40 @@ body {
 /* Tiny letterspaced caps in mono — the workhorse label of this design. */
 .label {
   font-family: var(--font-mono);
-  font-size: 0.66rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-size: 0.63rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
 }
+
+/* Serif small-caps-ish section marker — used where a line of type should feel
+   set rather than labelled. */
+.marker {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+}
+
+/* Navigation pips. Small, quiet, but they give the footer a rhythm. */
+.pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-ink-faint);
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+.pip:hover {
+  opacity: 1;
+}
+.pip[data-active='true'] {
+  background: var(--color-accent);
+  opacity: 1;
+  width: 16px;
+}
+
 
 /* A label followed by a hairline that runs out to fill the row. */
 .rule-row {
@@ -141,7 +170,7 @@ body {
     to bottom,
     transparent,
     transparent 30px,
-    rgba(221, 214, 199, 0.5) 31px
+    rgba(231, 228, 221, 0.75) 31px
   );
   background-position-y: 4px;
 }
@@ -162,12 +191,13 @@ body {
   pointer-events: none;
 }
 
-/* Flat cream ground with a whisper of dot texture — no vignette, no gradient. */
+/* Warm ground with the faintest tooth to it — you shouldn't be able to name
+   the texture, only notice the page isn't flat digital white. */
 .desk-background {
   background-color: var(--color-paper);
-  background-image: radial-gradient(rgba(34, 31, 27, 0.055) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-attachment: fixed;
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(156, 82, 51, 0.035), transparent 55%),
+    radial-gradient(circle at 84% 78%, rgba(118, 111, 98, 0.04), transparent 50%);
 }
 
 ::-webkit-scrollbar {

@@ -3,10 +3,14 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase, isCloudEnabled } from '../lib/supabase';
 import {
   applyState,
+  fingerprint,
   isSubstantial,
+  lastSynced,
   pullNotebook,
   pushNotebook,
+  rememberSynced,
   snapshotState,
+  stashReplaced,
   type NotebookData,
 } from '../lib/sync';
 import { useAppStore } from './useAppStore';
@@ -104,11 +108,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const userId = get().session?.user.id;
     if (!c || !userId) return;
     set({ conflict: null, status: 'syncing' });
+    // Whichever copy loses is kept on this device, so the choice is undoable.
+    stashReplaced(choice === 'cloud' ? c.local : c.cloud);
+    const kept = choice === 'cloud' ? c.cloud : c.local;
     if (choice === 'cloud') {
       applyState(c.cloud);
     } else {
       await pushNotebook(userId, c.local).catch(() => {});
     }
+    rememberSynced(userId, kept);
     startWatching(set, get);
     set({ status: 'saved' });
   },
@@ -118,7 +126,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!userId || !supabase) return;
     set({ status: 'syncing' });
     try {
-      await pushNotebook(userId, snapshotState());
+      const data = snapshotState();
+      await pushNotebook(userId, data);
+      rememberSynced(userId, data);
       set({ status: 'saved', error: null });
     } catch (e) {
       set({ status: 'error', error: e instanceof Error ? friendly(e.message) : 'Could not save' });
@@ -136,17 +146,30 @@ async function afterSignIn(set: SetFn, get: GetFn) {
   try {
     const cloud = await pullNotebook(userId);
     const local = snapshotState();
+    const cloudFp = fingerprint(cloud);
+    const localFp = fingerprint(local);
+    const knownFp = lastSynced(userId);
 
-    if (cloud && isSubstantial(cloud) && isSubstantial(local)) {
-      // both sides hold real work — let the user decide rather than guessing
+    // Nothing in the account yet, or the two sides already agree: no question
+    // worth asking. Same when only one side moved since we last synced — the
+    // side that changed is plainly the newer one.
+    if (!cloud || !isSubstantial(cloud)) {
+      await pushNotebook(userId, local);
+      rememberSynced(userId, local);
+    } else if (cloudFp === localFp) {
+      rememberSynced(userId, local);
+    } else if (!isSubstantial(local) || (knownFp !== null && localFp === knownFp)) {
+      applyState(cloud);
+      rememberSynced(userId, cloud);
+    } else if (knownFp !== null && cloudFp === knownFp) {
+      await pushNotebook(userId, local);
+      rememberSynced(userId, local);
+    } else {
+      // Genuinely divergent, and we have no record of reconciling them before.
       set({ conflict: { local, cloud }, status: 'idle' });
       return;
     }
-    if (cloud && isSubstantial(cloud)) {
-      applyState(cloud);
-    } else {
-      await pushNotebook(userId, local);
-    }
+
     startWatching(set, get);
     set({ status: 'saved' });
   } catch (e) {

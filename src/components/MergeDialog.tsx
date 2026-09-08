@@ -1,75 +1,61 @@
 import { useAuthStore } from '../store/useAuthStore';
-import { downloadBackup, type NotebookData } from '../lib/sync';
+import type { NotebookData } from '../lib/sync';
 
 function describe(d: NotebookData) {
   const n = (k: string) => (Array.isArray(d[k]) ? (d[k] as unknown[]).length : 0);
   const bits = [
-    [n('journalEntries'), 'journal entries'],
+    [n('journalEntries'), 'journal'],
     [n('todos'), 'to-dos'],
-    [n('schedule'), 'scheduled items'],
-    [n('stickyNotes'), 'sticky notes'],
-    [n('mindMapNodes'), 'mind map bubbles'],
+    [n('schedule'), 'scheduled'],
+    [n('stickyNotes'), 'stickies'],
+    [n('mindMapNodes'), 'bubbles'],
   ] as [number, string][];
   const parts = bits.filter(([c]) => c > 0).map(([c, label]) => `${c} ${label}`);
-  return parts.length ? parts.join(' · ') : 'nothing much';
+  return parts.length ? parts.join(' · ') : 'empty';
 }
 
 /**
- * Shown once, when signing in on a device that already has work AND the
- * account already holds work. Rather than guessing, the user picks.
+ * Only ever shown when this device and the account have genuinely drifted
+ * apart — same content, or a difference on one side only, is reconciled
+ * silently. The losing copy is stashed on the device, so this is not a
+ * one-way door and needs no download ritual.
  */
 export default function MergeDialog() {
   const conflict = useAuthStore((s) => s.conflict);
   const resolve = useAuthStore((s) => s.resolveConflict);
   if (!conflict) return null;
 
+  const options: [Parameters<typeof resolve>[0], string, NotebookData][] = [
+    ['local', 'This device', conflict.local],
+    ['cloud', 'Your account', conflict.cloud],
+  ];
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 p-4">
-      <div
-        className="w-full max-w-md bg-[#fffdf8] border-[3px] border-[var(--color-ink)] shadow-2xl p-6"
-        style={{ borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px' }}
-      >
-        <h2 className="font-hand text-3xl mb-1">Two notebooks</h2>
-        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-4">
-          This device and your account both have writing in them. Pick which one to keep — the other
-          is replaced, so grab a backup first if you are unsure.
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[var(--color-ink)]/20 p-4 backdrop-blur-[2px]">
+      <div className="w-full max-w-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-[0_20px_60px_-24px_rgba(43,42,39,0.45)] p-7">
+        <p className="label mb-3">Two versions</p>
+        <h2 className="font-display text-2xl leading-snug mb-2">
+          This notebook drifted <em className="italic text-[var(--color-accent)]">apart</em>.
+        </h2>
+        <p className="text-sm text-[var(--color-ink-soft)] mb-6 leading-relaxed">
+          Pick the one to carry forward. The other stays tucked away on this device — nothing is
+          thrown out.
         </p>
 
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => void resolve('local')}
-            className="text-left font-note border border-[var(--color-paper-line)] rounded-sm px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
-          >
-            <span className="block text-[var(--color-ink)]">Keep what is on this device</span>
-            <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">
-              {describe(conflict.local)}
-            </span>
-          </button>
-
-          <button
-            onClick={() => void resolve('cloud')}
-            className="text-left font-note border border-[var(--color-paper-line)] rounded-sm px-4 py-3 hover:bg-[var(--color-paper-deep)] transition-colors"
-          >
-            <span className="block text-[var(--color-ink)]">Keep what is in the account</span>
-            <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">
-              {describe(conflict.cloud)}
-            </span>
-          </button>
-        </div>
-
-        <div className="flex gap-4 mt-4">
-          <button
-            onClick={() => downloadBackup(conflict.local)}
-            className="font-note text-xs underline text-[var(--color-ink-soft)]"
-          >
-            back up this device
-          </button>
-          <button
-            onClick={() => downloadBackup(conflict.cloud)}
-            className="font-note text-xs underline text-[var(--color-ink-soft)]"
-          >
-            back up the account
-          </button>
+        <div className="flex flex-col">
+          {options.map(([choice, label, data]) => (
+            <button
+              key={choice}
+              onClick={() => void resolve(choice)}
+              className="group text-left border-t border-[var(--color-paper-line)] last:border-b py-3.5 flex items-baseline gap-3 transition-colors hover:text-[var(--color-accent)]"
+            >
+              <span className="text-[0.95rem]">{label}</span>
+              <span className="flex-1 h-px bg-[var(--color-paper-line)] translate-y-[-3px]" />
+              <span className="font-mono text-[0.68rem] text-[var(--color-ink-faint)]">
+                {describe(data)}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

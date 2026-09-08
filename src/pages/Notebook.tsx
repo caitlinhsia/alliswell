@@ -37,31 +37,18 @@ const FLIP_ORDER: ('front' | DeskPageKey)[] = [
 ];
 const ROTATIONS = [1.5, -1.5, 2, -2, 1, -1, 1.5];
 
-// A real top-bound notebook: going forward the current page lifts up and over the
-// binding; going back the previous page swings down from above onto the stack.
+// A quiet cross-fade with a few pixels of travel in the direction of movement.
+/* A sheet being laid down rather than a slide transition: it arrives slightly
+   large and settles, so the turn has weight without any 3D theatrics. */
 const pageVariants = {
-  enter: (dir: number) =>
-    dir > 0
-      ? { rotateX: 0, opacity: 1, scale: 0.985, y: 6, zIndex: 0, filter: 'brightness(0.9)' }
-      : { rotateX: -118, opacity: 1, scale: 1, y: 0, zIndex: 2, filter: 'brightness(0.72)' },
-  center: {
-    rotateX: 0,
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    zIndex: 1,
-    filter: 'brightness(1)',
-  },
-  exit: (dir: number) =>
-    dir > 0
-      ? { rotateX: -118, opacity: 1, scale: 1, y: 0, zIndex: 2, filter: 'brightness(0.72)' }
-      : { rotateX: 0, opacity: 1, scale: 0.985, y: 6, zIndex: 0, filter: 'brightness(0.9)' },
+  enter: (dir: number) => ({ opacity: 0, y: dir > 0 ? 18 : -18, scale: 0.994 }),
+  center: { opacity: 1, y: 0, scale: 1 },
+  exit: (dir: number) => ({ opacity: 0, y: dir > 0 ? -14 : 14, scale: 0.997 }),
 };
 
-// paper eases out fast then settles, rather than moving linearly
 const pageTransition = {
-  duration: 0.62,
-  ease: [0.33, 0.02, 0.2, 1] as [number, number, number, number],
+  duration: 0.22,
+  ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
 };
 
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; icon: IconName }> = {
@@ -151,31 +138,36 @@ export default function Notebook() {
           <button
             onClick={goToCover}
             aria-label="Go to cover"
-            className="font-display text-[1.35rem] leading-none text-[var(--color-ink)] hover:text-[var(--color-accent)] transition-colors"
+            className="font-display text-[1.4rem] leading-none tracking-[-0.01em] text-[var(--color-ink)] group"
           >
-            allisw3ll
+            allis
+            <em className="italic text-[var(--color-accent)] group-hover:opacity-70 transition-opacity">
+              w3ll
+            </em>
           </button>
-          <span className="label hidden sm:inline">{format(new Date(), 'EEE d MMM')}</span>
+          <span className="label hidden sm:inline font-mono-num">
+            {format(new Date(), 'EEE d MMM').toLowerCase()}
+          </span>
         </div>
 
         <div className="flex items-center gap-5">
           <nav className="flex items-center gap-4">
             <button
               onClick={() => setHomeViewMode('flip')}
-              className={`label transition-colors ${
+              className={`label pb-1 border-b transition-colors ${
                 homeViewMode === 'flip'
-                  ? 'text-[var(--color-ink)]'
-                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
+                  ? 'text-[var(--color-ink)] border-[var(--color-accent)]'
+                  : 'text-[var(--color-ink-faint)] border-transparent hover:text-[var(--color-ink-soft)]'
               }`}
             >
               Pages
             </button>
             <button
               onClick={() => setHomeViewMode('desk')}
-              className={`label transition-colors ${
+              className={`label pb-1 border-b transition-colors ${
                 homeViewMode === 'desk'
-                  ? 'text-[var(--color-ink)]'
-                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
+                  ? 'text-[var(--color-ink)] border-[var(--color-accent)]'
+                  : 'text-[var(--color-ink-faint)] border-transparent hover:text-[var(--color-ink-soft)]'
               }`}
             >
               Desk
@@ -255,8 +247,7 @@ function FlipView({
   return (
     <div className="flex-1 min-h-0 flex flex-col items-center">
       <div
-        className="relative w-full max-w-[1600px] mx-auto flex-1 min-h-0"
-        style={{ perspective: '2200px', perspectiveOrigin: 'center top' }}
+        className="relative w-full max-w-[1180px] mx-auto flex-1 min-h-0"
       >
         <AnimatePresence custom={direction} initial={false}>
           <motion.div
@@ -268,7 +259,6 @@ function FlipView({
             exit="exit"
             transition={pageTransition}
             className="absolute inset-0"
-            style={{ transformOrigin: 'top center', transformStyle: 'preserve-3d', backfaceVisibility: 'hidden' }}
           >
             {page === 'front' ? (
               <NotepadPage fill ringCount={24}>
@@ -276,7 +266,7 @@ function FlipView({
                 <StickyLayer page="front" />
               </NotepadPage>
             ) : (
-              <NotepadPage fill ringCount={24} title={PAGE_META[page].title} icon={PAGE_META[page].icon}>
+              <NotepadPage fill ringCount={24} title={PAGE_META[page].title}>
                 {renderFullContent(page)}
                 {page !== 'notes' && page !== 'write' && <StickyLayer page={page} />}
               </NotepadPage>
@@ -286,26 +276,34 @@ function FlipView({
 
       </div>
 
-      <div className="shrink-0 w-full max-w-[1600px] mx-auto mt-3 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2.5">
+      <div className="shrink-0 w-full max-w-[1180px] mx-auto mt-3 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => go(-1)}
             aria-label="Previous page"
             className="keycap hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
-            ←
+            ↑
           </button>
           <button
             onClick={() => go(1)}
             aria-label="Next page"
             className="keycap hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
           >
-            →
+            ↓
           </button>
-          <span className="label ml-1">navigate</span>
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="marker truncate capitalize">
+            {page === 'front' ? 'Cover' : PAGE_META[page as DeskPageKey].title}
+          </span>
+          <span className="font-mono-num text-[0.68rem] text-[var(--color-ink-faint)]">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
           {FLIP_ORDER.map((p, i) => (
             <button
               key={p}
@@ -313,22 +311,15 @@ function FlipView({
                 setDirection(i > index ? 1 : -1);
                 setIndex(i);
               }}
+              title={p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
               aria-label={`Go to ${p} page`}
               aria-current={i === index}
-              className={`label transition-colors ${
-                i === index
-                  ? 'text-[var(--color-accent)]'
-                  : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
-              }`}
+              className="py-2 px-0.5"
             >
-              {p === 'front' ? 'cover' : PAGE_META[p as DeskPageKey].title}
+              <span className="pip block" data-active={i === index} />
             </button>
           ))}
         </div>
-
-        <span className="label">
-          {String(index + 1).padStart(2, '0')} / {String(FLIP_ORDER.length).padStart(2, '0')}
-        </span>
       </div>
     </div>
   );
@@ -465,7 +456,6 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
               ) : card.group.length === 1 ? (
                 <NotepadPage
                   title={PAGE_META[card.group[0]].title}
-                  icon={PAGE_META[card.group[0]].icon}
                   rotate={isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
                   onClose={() => closeDeskPage(card.group[0])}
                   size={deskSizes[card.group[0]]}
@@ -552,6 +542,10 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       7
   );
 
+  const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+  const endOfYear = new Date(now.getFullYear() + 1, 0, 1).getTime();
+  const yearPct = Math.round(((now.getTime() - startOfYear) / (endOfYear - startOfYear)) * 100);
+
   if (compact) {
     return (
       <div className="flex flex-col gap-3">
@@ -601,9 +595,14 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
         </p>
       </div>
 
+      <div className="mt-8 flex items-center gap-3">
+        <span className="h-px w-10 shrink-0 bg-[var(--color-accent)]" />
+        <span className="h-px flex-1 bg-[var(--color-paper-line)]" />
+      </div>
+
       {/* widgets */}
       {frontPageWidgets.length > 0 && (
-        <div className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
           {frontPageWidgets.map((key) => (
             <section key={key} className="group min-w-0">
               <div className="rule-row mb-3">
@@ -622,8 +621,21 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
         </div>
       )}
 
+      <div className="mt-12 flex items-center gap-4 max-w-lg">
+        <span className="label whitespace-nowrap">the year</span>
+        <span className="relative flex-1 h-px bg-[var(--color-paper-line)]">
+          <span
+            className="absolute inset-y-0 left-0 bg-[var(--color-accent)]"
+            style={{ width: `${yearPct}%` }}
+          />
+        </span>
+        <span className="font-mono-num text-[0.68rem] text-[var(--color-ink-faint)]">
+          {yearPct}%
+        </span>
+      </div>
+
       {availableWidgets.length > 0 && (
-        <div className="relative mt-10 pb-6">
+        <div className="relative mt-8 pb-6">
           <button
             onClick={() => setPickerOpen((o) => !o)}
             className="label hover:text-[var(--color-ink)] transition-colors"
@@ -669,19 +681,31 @@ function MoodWidget({ compact }: { compact: boolean }) {
           key={m.value}
           onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
           title={m.label}
-          className={`rounded-sm border font-body flex flex-col items-center justify-center gap-0.5 leading-none transition-colors ${
-            compact ? 'w-11 h-9 text-[10px]' : 'w-16 h-14 text-[0.8rem]'
+          className={`font-body flex flex-col items-center leading-none transition-colors ${
+            compact ? 'gap-1 text-[10px]' : 'gap-1.5 text-[0.78rem]'
           } ${
             todayEntry?.mood === m.value
-              ? 'border-[var(--color-ink)]'
-              : 'border-[var(--color-paper-line)] hover:border-[var(--color-ink-faint)]'
+              ? 'text-[var(--color-accent)]'
+              : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'
           }`}
-          style={
-            todayEntry?.mood === m.value ? { background: m.tone } : undefined
-          }
         >
-          <span className={compact ? 'text-sm' : 'text-lg'}>{m.mark}</span>
-          {!compact && <span className="mt-0.5">{m.label}</span>}
+          <span
+            className={`flex items-center justify-center rounded-full border transition-all ${
+              compact ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-lg'
+            } ${
+              todayEntry?.mood === m.value
+                ? 'border-transparent'
+                : 'border-[var(--color-paper-line)]'
+            }`}
+            style={
+              todayEntry?.mood === m.value
+                ? { background: m.tone, color: 'var(--color-ink)' }
+                : undefined
+            }
+          >
+            {m.mark}
+          </span>
+          {!compact && <span>{m.label}</span>}
         </button>
       ))}
     </div>

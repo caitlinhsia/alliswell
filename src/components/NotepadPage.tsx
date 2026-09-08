@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SpiralRings from './SpiralRings';
-import Icon, { type IconName } from './Icon';
 
 export interface DragHandle {
   id: string;
@@ -30,7 +29,6 @@ export function tornClip(teeth = 22, depth = 2.6) {
 
 export default function NotepadPage({
   title,
-  icon,
   rotate = 0,
   onClose,
   children,
@@ -44,7 +42,6 @@ export default function NotepadPage({
   lifted = false,
 }: {
   title?: string;
-  icon?: IconName;
   rotate?: number;
   onClose?: () => void;
   children: ReactNode;
@@ -114,9 +111,9 @@ export default function NotepadPage({
               }
             : undefined
         }
-        className={`relative bg-[var(--color-paper)] border pt-8 px-7 pb-6 transition-colors ${
-          dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'
-        } ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
+        className={`relative bg-[var(--color-paper)] transition-colors ${
+          fill ? 'pt-1 px-0 pb-0' : 'border pt-8 px-6 pb-5'
+        } ${dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'} ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
           onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
         ref={boxRef}
@@ -177,10 +174,11 @@ export default function NotepadPage({
           </span>
         )}
         {title && (
-          <h2 className="font-display font-normal text-[1.7rem] leading-tight text-[var(--color-ink)] mb-4 flex items-center gap-2.5">
-            {icon && <Icon name={icon} size={17} className="text-[var(--color-ink-faint)]" />}
-            {title}
-          </h2>
+          <div className="mb-5 flex items-center gap-3">
+            <span className="h-px w-6 shrink-0 bg-[var(--color-accent)]" />
+            <h2 className="label whitespace-nowrap">{title}</h2>
+            <span className="h-px flex-1 bg-[var(--color-paper-line)]" />
+          </div>
         )}
         {children}
       </div>
