@@ -735,7 +735,7 @@ function MiniSchedule() {
                 type="checkbox"
                 checked={item.done}
                 onChange={() => toggleScheduleItem(item.id)}
-                className="accent-[var(--color-tab-sky)] w-4 h-4"
+                className="accent-[var(--color-accent)] w-4 h-4"
               />
               <span className={item.done ? 'line-through text-[var(--color-ink-soft)]' : ''}>
                 {item.title}
@@ -751,16 +751,20 @@ function MiniSchedule() {
           addScheduleItem(title.trim(), today, undefined, 'task');
           setTitle('');
         }}
-        className="flex gap-1.5"
+        className="flex items-end gap-2"
       >
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="quick add..."
-          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
+          placeholder="add something..."
+          className="flex-1 min-w-0 font-body text-sm bg-transparent border-b border-[var(--color-paper-line)] px-0.5 py-1 placeholder:text-[var(--color-ink-faint)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
         />
-        <button type="submit" className="font-note text-sm bg-[var(--color-tab-sky)] px-2.5 rounded-lg">
-          +
+        <button
+          type="submit"
+          aria-label="Add"
+          className="label px-1 hover:text-[var(--color-accent)] transition-colors"
+        >
+          add
         </button>
       </form>
     </div>
@@ -797,7 +801,7 @@ function MiniTodo() {
                 type="checkbox"
                 checked={t.done}
                 onChange={() => toggleTodo(t.id)}
-                className="accent-[var(--color-tab-sky)] w-4 h-4 shrink-0"
+                className="accent-[var(--color-accent)] w-4 h-4 shrink-0"
               />
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -815,16 +819,20 @@ function MiniTodo() {
           addTodo(text.trim(), 'medium');
           setText('');
         }}
-        className="flex gap-1.5"
+        className="flex items-end gap-2"
       >
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="quick add..."
-          className="flex-1 font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
+          placeholder="add something..."
+          className="flex-1 min-w-0 font-body text-sm bg-transparent border-b border-[var(--color-paper-line)] px-0.5 py-1 placeholder:text-[var(--color-ink-faint)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
         />
-        <button type="submit" className="font-note text-sm bg-[var(--color-tab-sky)] px-2.5 rounded-lg">
-          +
+        <button
+          type="submit"
+          aria-label="Add"
+          className="label px-1 hover:text-[var(--color-accent)] transition-colors"
+        >
+          add
         </button>
       </form>
     </div>
@@ -841,9 +849,9 @@ function MiniStudy() {
 
   return (
     <div>
-      <p className="font-hand text-5xl text-[var(--color-tab-sage)]">
+      <p className="font-mono-num text-4xl leading-none text-[var(--color-ink)]">
         {todaysMinutes}
-        <span className="text-base font-note text-[var(--color-ink-soft)]"> min today</span>
+        <span className="text-sm font-body text-[var(--color-ink-soft)] ml-1.5">min today</span>
       </p>
       <p className="font-note text-sm text-[var(--color-ink-soft)] mt-1">
         {subjects.length} subject{subjects.length === 1 ? '' : 's'} tracked
@@ -933,8 +941,11 @@ function MiniNotes() {
           {pinned.map((note) => (
             <div
               key={note.id}
-              className="w-24 h-24 p-2 shadow font-note text-xs overflow-hidden"
-              style={{ background: NOTE_COLORS[note.color] }}
+              className="w-24 h-24 p-2 rounded-sm border font-body text-xs overflow-hidden"
+              style={{
+                background: `color-mix(in srgb, ${NOTE_COLORS[note.color]} 22%, var(--color-paper))`,
+                borderColor: `color-mix(in srgb, ${NOTE_COLORS[note.color]} 45%, transparent)`,
+              }}
             >
               {note.text || <span className="text-[var(--color-ink-soft)]">(empty)</span>}
             </div>
@@ -950,7 +961,7 @@ function MiniNotes() {
             80 + Math.random() * 200
           )
         }
-        className="font-note text-sm border border-[var(--color-paper-line)] rounded-lg px-2.5 py-1"
+        className="label hover:text-[var(--color-accent)] transition-colors"
       >
         + quick note
       </button>

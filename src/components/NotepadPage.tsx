@@ -111,8 +111,8 @@ export default function NotepadPage({
               }
             : undefined
         }
-        className={`relative bg-[var(--color-paper)] transition-colors ${
-          fill ? 'pt-1 px-0 pb-0' : 'border pt-8 px-6 pb-5'
+        className={`relative transition-colors ${
+          fill ? 'bg-transparent pt-1 px-0 pb-0' : 'bg-[var(--color-paper)] border pt-8 px-6 pb-5'
         } ${dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'} ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
           onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
