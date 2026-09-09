@@ -397,7 +397,7 @@ export default function MindMap() {
                         <button
                           key={group.label + i}
                           onClick={() => pasteFromLibrary(entry)}
-                          className="w-full text-left font-note text-xs px-1.5 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] truncate"
+                          className="w-full text-left font-note text-xs px-1.5 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)] truncate"
                           title={entry}
                         >
                           {entry}
@@ -420,7 +420,7 @@ export default function MindMap() {
         >
           <button
             onClick={() => setZoom((z) => Math.min(2, +(z + 0.15).toFixed(2)))}
-            className="w-8 h-8 rounded-lg hover:bg-[var(--color-paper-deep)] font-note text-lg leading-none flex items-center justify-center"
+            className="w-8 h-8 rounded-sm hover:bg-[var(--color-paper-deep)] font-note text-lg leading-none flex items-center justify-center"
             aria-label="Zoom in"
           >
             +
@@ -437,7 +437,7 @@ export default function MindMap() {
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(0.3, +(z - 0.15).toFixed(2)))}
-            className="w-8 h-8 rounded-lg hover:bg-[var(--color-paper-deep)] font-note text-lg leading-none flex items-center justify-center"
+            className="w-8 h-8 rounded-sm hover:bg-[var(--color-paper-deep)] font-note text-lg leading-none flex items-center justify-center"
             aria-label="Zoom out"
           >
             −

@@ -57,7 +57,7 @@ export default function AccountMenu() {
                 void saveNow();
                 setOpen(false);
               }}
-              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)]"
+              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)]"
             >
               save now
             </button>
@@ -66,7 +66,7 @@ export default function AccountMenu() {
                 downloadBackup();
                 setOpen(false);
               }}
-              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)]"
+              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)]"
             >
               download a backup
             </button>
@@ -75,7 +75,7 @@ export default function AccountMenu() {
                 void signOut();
                 setOpen(false);
               }}
-              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-paper-deep)] text-[var(--color-note-rust)]"
+              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)] text-[var(--color-note-rust)]"
             >
               sign out
             </button>

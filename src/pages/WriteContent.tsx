@@ -151,7 +151,7 @@ function ToolBtn({
     <button
       onClick={onClick}
       title={title}
-      className={`w-8 h-8 rounded-lg border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)] font-note text-sm flex items-center justify-center shrink-0 ${className}`}
+      className={`w-8 h-8 rounded-sm border border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)] font-note text-sm flex items-center justify-center shrink-0 ${className}`}
     >
       {label}
     </button>

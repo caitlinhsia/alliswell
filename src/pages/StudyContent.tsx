@@ -86,10 +86,16 @@ export default function StudyContent() {
                 key={s.id}
                 onClick={() => setActiveSubjectId(s.id)}
                 disabled={running}
-                className="font-note text-sm px-3 py-1.5 rounded-full border disabled:opacity-40"
+                className="font-note text-sm px-3 py-1.5 rounded-sm border transition-colors disabled:opacity-40"
                 style={{
-                  background: activeSubjectId === s.id ? NOTE_COLORS[s.color] : 'transparent',
-                  borderColor: 'var(--color-paper-line)',
+                  background:
+                    activeSubjectId === s.id
+                      ? `color-mix(in srgb, ${NOTE_COLORS[s.color]} 20%, var(--color-paper))`
+                      : 'transparent',
+                  borderColor:
+                    activeSubjectId === s.id
+                      ? `color-mix(in srgb, ${NOTE_COLORS[s.color]} 55%, transparent)`
+                      : 'var(--color-paper-line)',
                 }}
               >
                 {s.name}
@@ -107,7 +113,7 @@ export default function StudyContent() {
                   key={d}
                   onClick={() => resetTimer(d)}
                   disabled={running}
-                  className={`font-note text-xs px-2.5 py-1 rounded-lg border disabled:opacity-40 ${
+                  className={`font-note text-xs px-2.5 py-1 rounded-sm border disabled:opacity-40 ${
                     duration === d
                       ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
                       : 'border-[var(--color-paper-line)]'
@@ -121,13 +127,13 @@ export default function StudyContent() {
               <button
                 onClick={() => setRunning((r) => !r)}
                 disabled={!activeSubjectId}
-                className="font-note bg-[var(--color-tab-sage)] px-5 py-2 rounded-lg disabled:opacity-40"
+                className="btn-primary"
               >
                 {running ? 'Pause' : 'Start'}
               </button>
               <button
                 onClick={() => resetTimer(duration)}
-                className="font-note border border-[var(--color-paper-line)] px-5 py-2 rounded-lg"
+                className="btn"
               >
                 Reset
               </button>
@@ -158,7 +164,7 @@ export default function StudyContent() {
               placeholder="New subject"
               className="flex-1 font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
-            <button type="submit" className="font-note bg-[var(--color-tab-sage)] px-3 py-1.5 rounded-lg">
+            <button type="submit" className="btn-primary">
               Add
             </button>
           </form>
@@ -206,7 +212,7 @@ export default function StudyContent() {
             <button
               type="submit"
               disabled={!activeSubjectId}
-              className="font-note border border-[var(--color-paper-line)] px-3 py-1.5 rounded-lg disabled:opacity-40"
+              className="btn"
             >
               Add
             </button>
@@ -218,7 +224,7 @@ export default function StudyContent() {
                   type="checkbox"
                   checked={t.done}
                   onChange={() => toggleStudyTodo(t.id)}
-                  className="accent-[var(--color-tab-sage)]"
+                  className="accent-[var(--color-accent)]"
                 />
                 {editingTodoId === t.id ? (
                   <input

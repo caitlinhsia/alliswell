@@ -94,7 +94,7 @@ export default function TodoContent() {
                   key={p}
                   type="button"
                   onClick={() => setPriority(priority === p ? null : p)}
-                  className="font-note text-sm px-3 py-2 rounded-lg border transition-colors"
+                  className="font-note text-sm px-3 py-2 rounded-sm border transition-colors"
                   style={{
                     background: effPriority === p ? PRIORITY_META[p].color : 'transparent',
                     borderColor: effPriority === p ? PRIORITY_META[p].color : 'var(--color-paper-line)',

@@ -177,7 +177,7 @@ export default function Notebook() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 flex flex-col px-5 md:px-8 pt-5 pb-3">
+      <div className="flex-1 min-h-0 flex flex-col px-5 md:px-8 pt-5 pb-5">
       {homeViewMode === 'flip' ? (
         <FlipView index={flipIndex} setIndex={setFlipIndex} direction={direction} setDirection={setDirection} />
       ) : (
@@ -276,7 +276,7 @@ function FlipView({
 
       </div>
 
-      <div className="shrink-0 w-full max-w-[1180px] mx-auto mt-3 flex items-center justify-between gap-6">
+      <div className="shrink-0 w-full max-w-[1180px] mx-auto mt-4 flex items-center justify-between gap-6">
         <div className="flex items-center gap-2">
           <button
             onClick={() => go(-1)}
@@ -303,7 +303,7 @@ function FlipView({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-end gap-1.5">
           {FLIP_ORDER.map((p, i) => (
             <button
               key={p}
@@ -314,9 +314,13 @@ function FlipView({
               title={p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
               aria-label={`Go to ${p} page`}
               aria-current={i === index}
-              className="py-2 px-0.5"
+              className="flex items-end h-4 px-0.5"
             >
-              <span className="pip block" data-active={i === index} />
+              <span
+                className="tab block"
+                data-active={i === index}
+                style={{ '--tab-color': TAB_COLORS[i % TAB_COLORS.length] } as React.CSSProperties}
+              />
             </button>
           ))}
         </div>
@@ -324,6 +328,17 @@ function FlipView({
     </div>
   );
 }
+
+/** Muted stub colours for the index tabs, one per section in flip order. */
+const TAB_COLORS = [
+  'var(--color-accent)',
+  'var(--color-tab-sky)',
+  'var(--color-tab-sage)',
+  'var(--color-tab-butter)',
+  'var(--color-tab-lavender)',
+  'var(--color-tab-blush)',
+  'var(--color-note-teal)',
+];
 
 type DeskCard = { key: string; group: DeskPageKey[] };
 
@@ -595,22 +610,19 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
         </p>
       </div>
 
-      <div className="mt-8 flex items-center gap-3">
-        <span className="h-px w-10 shrink-0 bg-[var(--color-accent)]" />
-        <span className="h-px flex-1 bg-[var(--color-paper-line)]" />
-      </div>
+      <div className="mt-8 h-px bg-[var(--color-paper-line)]" />
 
       {/* widgets */}
       {frontPageWidgets.length > 0 && (
         <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
           {frontPageWidgets.map((key) => (
             <section key={key} className="group min-w-0">
-              <div className="rule-row mb-3">
-                <span className="label whitespace-nowrap">{FRONT_WIDGET_META[key].label}</span>
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h2 className="section">{FRONT_WIDGET_META[key].label}</h2>
                 <button
                   onClick={() => removeFrontWidget(key)}
                   aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
-                  className="label order-last ml-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity"
+                  className="label opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity"
                 >
                   remove
                 </button>

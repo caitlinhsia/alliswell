@@ -271,7 +271,7 @@ export default function ScheduleContent() {
                         e.dataTransfer.setData('text/plain', item.id);
                         e.dataTransfer.effectAllowed = 'move';
                       }}
-                      className="rounded-lg border border-[var(--color-paper-line)] bg-[var(--color-paper)] px-1.5 py-1 cursor-grab active:cursor-grabbing"
+                      className="rounded-sm border border-[var(--color-paper-line)] bg-[var(--color-paper)] px-1.5 py-1 cursor-grab active:cursor-grabbing"
                       style={accent ? { borderLeft: `3px solid ${accent}` } : undefined}
                     >
                       <div className="flex items-start gap-1.5 font-note text-xs leading-snug">

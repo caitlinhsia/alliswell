@@ -112,7 +112,7 @@ export default function NotepadPage({
             : undefined
         }
         className={`relative transition-colors ${
-          fill ? 'bg-transparent pt-1 px-0 pb-0' : 'bg-[var(--color-paper)] border pt-8 px-6 pb-5'
+          fill ? 'sheet pt-8 px-9 pb-4' : 'bg-[var(--color-paper)] border pt-8 px-6 pb-5'
         } ${dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'} ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
           onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
@@ -123,33 +123,33 @@ export default function NotepadPage({
           ...(lifted ? { clipPath: tornClip() } : {}),
         }}
       >
-        {/* perforation: the tear-off strip sits flush under the rings */}
-        <div
-          draggable={!!dragHandle}
-          onDragStart={
-            dragHandle
-              ? (e) => {
-                  e.dataTransfer.setData('text/plain', dragHandle.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }
-              : undefined
-          }
-          onPointerDown={grabHandle}
-          title={grabHandle ? 'Tear it off and move it anywhere' : undefined}
-          className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b touch-none ${
-            lifted ? 'border-transparent' : 'border-[var(--color-paper-line)]'
-          } ${
-            grabHandle
-              ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40'
-              : ''
-          }`}
-        >
-          {(grabHandle || dragHandle) && (
+        {/* perforation: only on cards you can actually pick up and move */}
+        {(grabHandle || dragHandle) && (
+          <div
+            draggable={!!dragHandle}
+            onDragStart={
+              dragHandle
+                ? (e) => {
+                    e.dataTransfer.setData('text/plain', dragHandle.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }
+                : undefined
+            }
+            onPointerDown={grabHandle}
+            title={grabHandle ? 'Tear it off and move it anywhere' : undefined}
+            className={`absolute top-0 left-0 right-0 h-7 flex items-center justify-center border-b touch-none ${
+              lifted ? 'border-transparent' : 'border-[var(--color-paper-line)]'
+            } ${
+              grabHandle
+                ? 'cursor-grab active:cursor-grabbing hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)]/40'
+                : ''
+            }`}
+          >
             <span className="font-mono text-[var(--color-ink-faint)] text-[9px] tracking-[0.35em] leading-none select-none">
               ｜｜｜
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {onClose && (
           <button
@@ -173,13 +173,7 @@ export default function NotepadPage({
             <span className="w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--color-ink-soft)]/50 rounded-br-sm" />
           </span>
         )}
-        {title && (
-          <div className="mb-5 flex items-center gap-3">
-            <span className="h-px w-6 shrink-0 bg-[var(--color-accent)]" />
-            <h2 className="label whitespace-nowrap">{title}</h2>
-            <span className="h-px flex-1 bg-[var(--color-paper-line)]" />
-          </div>
-        )}
+        {title && <h2 className="section capitalize mb-5">{title}</h2>}
         {children}
       </div>
     </div>

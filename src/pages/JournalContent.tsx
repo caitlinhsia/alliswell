@@ -134,7 +134,7 @@ export default function JournalContent() {
             )}
             <button
               onClick={() => save(text, mood)}
-              className="font-note text-sm bg-[var(--color-tab-blush)] px-4 py-1.5 rounded-lg"
+              className="btn-primary"
             >
               Save
             </button>
@@ -151,7 +151,7 @@ export default function JournalContent() {
                 <li key={e.id}>
                   <button
                     onClick={() => setSelectedDate(e.date)}
-                    className={`w-full text-left font-note text-sm px-2.5 py-1.5 rounded-lg flex items-center gap-2 ${
+                    className={`w-full text-left font-note text-sm px-2.5 py-1.5 rounded-sm flex items-center gap-2 ${
                       e.date === selectedDate ? 'bg-[var(--color-paper-deep)]' : 'hover:bg-[var(--color-paper-deep)]/50'
                     }`}
                   >

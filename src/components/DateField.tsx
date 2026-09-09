@@ -89,7 +89,7 @@ export default function DateField({
         onClick={() => setOpen((o) => !o)}
         className={
           className ||
-          `font-note border border-[var(--color-paper-line)] rounded-lg bg-[var(--color-paper)] text-left hover:border-[var(--color-ink-soft)] transition-colors ${
+          `font-note border border-[var(--color-paper-line)] rounded-sm bg-[var(--color-paper)] text-left hover:border-[var(--color-ink-soft)] transition-colors ${
             compact ? 'text-xs px-2 py-1' : 'px-3 py-2'
           } ${!selected ? 'text-[var(--color-ink-soft)]/70' : ''}`
         }
@@ -108,7 +108,7 @@ export default function DateField({
               type="button"
               onClick={() => setCursor((c) => addMonths(c, -1))}
               aria-label="Previous month"
-              className="w-7 h-7 rounded-lg hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-[var(--color-ink-soft)]"
+              className="w-7 h-7 rounded-sm hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-[var(--color-ink-soft)]"
             >
               ‹
             </button>
@@ -117,7 +117,7 @@ export default function DateField({
               type="button"
               onClick={() => setCursor((c) => addMonths(c, 1))}
               aria-label="Next month"
-              className="w-7 h-7 rounded-lg hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-[var(--color-ink-soft)]"
+              className="w-7 h-7 rounded-sm hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-[var(--color-ink-soft)]"
             >
               ›
             </button>
@@ -147,7 +147,7 @@ export default function DateField({
                     onChange(format(d, 'yyyy-MM-dd'));
                     setOpen(false);
                   }}
-                  className={`font-note text-xs h-7 rounded-lg transition-colors ${
+                  className={`font-note text-xs h-7 rounded-sm transition-colors ${
                     isSel
                       ? 'bg-[var(--color-ink)] text-[var(--color-paper)]'
                       : inMonth
