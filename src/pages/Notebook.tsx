@@ -261,12 +261,12 @@ function FlipView({
             className="absolute inset-0"
           >
             {page === 'front' ? (
-              <NotepadPage fill ringCount={24}>
+              <NotepadPage fill ringCount={14}>
                 <FrontPage />
                 <StickyLayer page="front" />
               </NotepadPage>
             ) : (
-              <NotepadPage fill ringCount={24} title={PAGE_META[page].title}>
+              <NotepadPage fill ringCount={14} title={PAGE_META[page].title}>
                 {renderFullContent(page)}
                 {page !== 'notes' && page !== 'write' && <StickyLayer page={page} />}
               </NotepadPage>

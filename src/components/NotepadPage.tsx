@@ -89,7 +89,6 @@ export default function NotepadPage({
       className={`relative ${fill ? 'w-full h-full' : 'shrink-0'}`}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      {!lifted && <SpiralRings count={ringCount} />}
       <div
         onDragOver={
           dragHandle
@@ -112,7 +111,7 @@ export default function NotepadPage({
             : undefined
         }
         className={`relative transition-colors ${
-          fill ? 'sheet pt-8 px-9 pb-4' : 'bg-[var(--color-paper)] border pt-8 px-6 pb-5'
+          fill ? 'sheet pt-9 pl-12 pr-9 pb-4' : 'bg-[var(--color-paper)] border pt-8 px-6 pb-5'
         } ${dragOver ? 'border-[var(--color-accent)]' : 'border-[var(--color-paper-line)]'} ${fill ? 'w-full h-full flex flex-col overflow-hidden' : ''} ${
           onResize ? 'overflow-hidden flex flex-col' : ''
         } ${className}`}
@@ -123,6 +122,8 @@ export default function NotepadPage({
           ...(lifted ? { clipPath: tornClip() } : {}),
         }}
       >
+        {!lifted && <SpiralRings count={fill ? ringCount : Math.min(ringCount, 8)} />}
+
         {/* perforation: only on cards you can actually pick up and move */}
         {(grabHandle || dragHandle) && (
           <div
@@ -173,6 +174,7 @@ export default function NotepadPage({
             <span className="w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--color-ink-soft)]/50 rounded-br-sm" />
           </span>
         )}
+        {fill && <span className="margin-rule" />}
         {title && <h2 className="section capitalize mb-5">{title}</h2>}
         {children}
       </div>

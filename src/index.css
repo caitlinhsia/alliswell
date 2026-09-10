@@ -240,14 +240,30 @@ body {
     radial-gradient(circle at 84% 82%, rgba(118, 111, 98, 0.035), transparent 50%);
 }
 
-/* A sheet of paper resting on it. The shadow is the only thing doing the
-   work — no borders, no torn edges, no rings. */
+/* A sheet of paper resting on it — and, peeking out below, the two sheets it
+   is still attached to. That stack is what makes this a notebook rather than
+   a card, and it is drawn entirely in box-shadow. */
 .sheet {
   background: var(--color-paper);
   border-radius: 2px;
   box-shadow:
     0 1px 1px rgba(38, 35, 29, 0.04),
-    0 14px 34px -22px rgba(38, 35, 29, 0.5);
+    0 5px 0 -1px var(--color-paper),
+    0 6px 0 -1px var(--color-paper-line),
+    0 10px 0 -2px var(--color-paper),
+    0 11px 0 -2px var(--color-paper-line),
+    0 18px 36px -24px rgba(38, 35, 29, 0.55);
+}
+
+/* The ruled margin every notebook page has, in the accent, barely there. */
+.margin-rule {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1.9rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  pointer-events: none;
 }
 
 ::-webkit-scrollbar {
