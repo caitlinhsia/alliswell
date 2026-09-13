@@ -246,9 +246,8 @@ function FlipView({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col items-center">
-      <div
-        className="relative w-full max-w-[1180px] mx-auto flex-1 min-h-0"
-      >
+      <div className="w-full max-w-[1280px] mx-auto flex-1 min-h-0 flex gap-0">
+      <div className="relative flex-1 min-h-0">
         <AnimatePresence custom={direction} initial={false}>
           <motion.div
             key={page}
@@ -273,10 +272,29 @@ function FlipView({
             )}
           </motion.div>
         </AnimatePresence>
-
       </div>
 
-      <div className="shrink-0 w-full max-w-[1180px] mx-auto mt-4 flex items-center justify-between gap-6">
+      {/* the divider tabs — every section visible at once, sorted by colour */}
+      <nav className="shrink-0 hidden md:flex flex-col gap-1.5 pt-12 w-[128px]">
+        {FLIP_ORDER.map((p, i) => (
+          <button
+            key={p}
+            onClick={() => {
+              setDirection(i > index ? 1 : -1);
+              setIndex(i);
+            }}
+            aria-current={i === index}
+            className="divider-tab capitalize"
+            data-active={i === index}
+            style={{ '--tab-color': TAB_COLORS[i % TAB_COLORS.length] } as React.CSSProperties}
+          >
+            {p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
+          </button>
+        ))}
+      </nav>
+      </div>
+
+      <div className="shrink-0 w-full max-w-[1280px] mx-auto mt-4 flex items-center justify-between gap-6">
         <div className="flex items-center gap-2">
           <button
             onClick={() => go(-1)}
@@ -294,16 +312,8 @@ function FlipView({
           </button>
         </div>
 
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="marker truncate capitalize">
-            {page === 'front' ? 'Cover' : PAGE_META[page as DeskPageKey].title}
-          </span>
-          <span className="font-mono-num text-[0.68rem] text-[var(--color-ink-faint)]">
-            {String(index + 1).padStart(2, '0')}
-          </span>
-        </div>
-
-        <div className="flex items-end gap-1.5">
+        {/* on phones the rail has nowhere to go, so it lies down here */}
+        <div className="flex md:hidden items-center gap-1.5 overflow-x-auto">
           {FLIP_ORDER.map((p, i) => (
             <button
               key={p}
@@ -311,19 +321,29 @@ function FlipView({
                 setDirection(i > index ? 1 : -1);
                 setIndex(i);
               }}
-              title={p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
-              aria-label={`Go to ${p} page`}
               aria-current={i === index}
-              className="flex items-end h-4 px-0.5"
+              className="shrink-0 rounded-sm px-2.5 py-1 text-xs capitalize transition-colors"
+              style={{
+                background:
+                  i === index
+                    ? `color-mix(in srgb, ${TAB_COLORS[i % TAB_COLORS.length]} 30%, var(--color-paper))`
+                    : 'transparent',
+                color: i === index ? 'var(--color-ink)' : 'var(--color-ink-faint)',
+              }}
             >
-              <span
-                className="tab block"
-                data-active={i === index}
-                style={{ '--tab-color': TAB_COLORS[i % TAB_COLORS.length] } as React.CSSProperties}
-              />
+              {p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
             </button>
           ))}
         </div>
+
+        <span className="hidden md:flex items-center gap-3 min-w-0">
+          <span className="marker truncate capitalize">
+            {page === 'front' ? 'Cover' : PAGE_META[page as DeskPageKey].title}
+          </span>
+          <span className="font-mono-num text-[0.68rem] text-[var(--color-ink-faint)]">
+            {String(index + 1).padStart(2, '0')} / {String(FLIP_ORDER.length).padStart(2, '0')}
+          </span>
+        </span>
       </div>
     </div>
   );
@@ -336,8 +356,8 @@ const TAB_COLORS = [
   'var(--color-tab-sage)',
   'var(--color-tab-butter)',
   'var(--color-tab-lavender)',
-  'var(--color-tab-blush)',
   'var(--color-note-teal)',
+  'var(--color-note-clay)',
 ];
 
 type DeskCard = { key: string; group: DeskPageKey[] };

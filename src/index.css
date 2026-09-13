@@ -156,24 +156,53 @@ body {
   opacity: 0.35;
 }
 
-/* Notebook index tabs: the little coloured stubs down the edge of a real
-   notebook, flattened out into the page footer. */
-.tab {
+/* Notebook divider tabs. Real ones stick out past the edge of the page so you
+   can read every section at once — that legibility is the whole point, so the
+   labels stay and the colour does the sorting. */
+.divider-tab {
   position: relative;
-  height: 5px;
-  width: 26px;
-  border-radius: 2px 2px 0 0;
-  background: var(--tab-color, var(--color-ink-faint));
-  opacity: 0.35;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.1;
+  text-align: left;
+  padding: 0.62rem 0.7rem 0.62rem 0.85rem;
+  border-radius: 0 4px 4px 0;
+  border: 1px solid transparent;
+  border-left: none;
+  color: var(--color-ink-soft);
+  background: color-mix(in srgb, var(--tab-color) 20%, var(--color-paper));
+  border-color: color-mix(in srgb, var(--tab-color) 38%, transparent);
+  transform: translateX(-6px);
+  transition:
+    transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.24s ease,
+    color 0.24s ease;
 }
-.tab:hover {
-  opacity: 0.7;
-  height: 9px;
+.divider-tab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--tab-color);
+  opacity: 0.8;
 }
-.tab[data-active='true'] {
+.divider-tab:hover {
+  transform: translateX(-2px);
+  color: var(--color-ink);
+}
+.divider-tab[data-active='true'] {
+  transform: translateX(6px);
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--tab-color) 42%, var(--color-paper));
+  border-color: color-mix(in srgb, var(--tab-color) 62%, transparent);
+  box-shadow: 0 6px 16px -12px rgba(38, 35, 29, 0.6);
+}
+.divider-tab[data-active='true']::before {
   opacity: 1;
-  height: 13px;
 }
 
 .font-mono-num {
