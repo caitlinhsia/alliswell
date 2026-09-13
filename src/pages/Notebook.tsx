@@ -138,7 +138,7 @@ export default function Notebook() {
           <button
             onClick={goToCover}
             aria-label="Go to cover"
-            className="font-display text-[1.4rem] leading-none tracking-[-0.01em] text-[var(--color-ink)] group"
+            className="font-display text-[1.15rem] leading-none tracking-[-0.01em] text-[var(--color-ink)] group"
           >
             allis
             <em className="italic text-[var(--color-accent)] group-hover:opacity-70 transition-opacity">
@@ -286,7 +286,6 @@ function FlipView({
             aria-current={i === index}
             className="divider-tab capitalize"
             data-active={i === index}
-            style={{ '--tab-color': TAB_COLORS[i % TAB_COLORS.length] } as React.CSSProperties}
           >
             {p === 'front' ? 'Cover' : PAGE_META[p as DeskPageKey].title}
           </button>
@@ -326,7 +325,7 @@ function FlipView({
               style={{
                 background:
                   i === index
-                    ? `color-mix(in srgb, ${TAB_COLORS[i % TAB_COLORS.length]} 30%, var(--color-paper))`
+                    ? 'color-mix(in srgb, var(--color-accent) 26%, var(--color-paper))'
                     : 'transparent',
                 color: i === index ? 'var(--color-ink)' : 'var(--color-ink-faint)',
               }}
@@ -349,16 +348,6 @@ function FlipView({
   );
 }
 
-/** Muted stub colours for the index tabs, one per section in flip order. */
-const TAB_COLORS = [
-  'var(--color-accent)',
-  'var(--color-tab-sky)',
-  'var(--color-tab-sage)',
-  'var(--color-tab-butter)',
-  'var(--color-tab-lavender)',
-  'var(--color-note-teal)',
-  'var(--color-note-clay)',
-];
 
 type DeskCard = { key: string; group: DeskPageKey[] };
 
@@ -378,8 +367,11 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const deskLayout = useAppStore((s) => s.deskLayout);
   const setDeskPos = useAppStore((s) => s.setDeskPos);
   const bringToFront = useAppStore((s) => s.bringDeskCardToFront);
+  const mergeDeskPage = useAppStore((s) => s.mergeDeskPage);
 
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragRef = useRef<{ key: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -409,11 +401,33 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
       x: Math.max(0, d.ox + (e.clientX - d.sx)),
       y: Math.max(0, d.oy + (e.clientY - d.sy)),
     });
+    setDropTarget(cardUnder(e.clientX, e.clientY, d.key));
   }
 
-  function endDrag() {
+  /** The card the pointer is over, ignoring the one being dragged. */
+  function cardUnder(x: number, y: number, exceptKey: string): string | null {
+    for (const card of cards) {
+      if (card.key === exceptKey || card.key === 'front' || card.group.length === 0) continue;
+      const r = cardRefs.current[card.key]?.getBoundingClientRect();
+      if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return card.key;
+    }
+    return null;
+  }
+
+  function endDrag(e?: React.PointerEvent) {
+    const d = dragRef.current;
+    if (d && e) {
+      const over = cardUnder(e.clientX, e.clientY, d.key);
+      const dragged = cards.find((c) => c.key === d.key);
+      const target = cards.find((c) => c.key === over);
+      // dropping a page onto another folds the two into one stack
+      if (over && dragged && target && dragged.group.length > 0) {
+        for (const key of dragged.group) mergeDeskPage(key, target.group[0]);
+      }
+    }
     dragRef.current = null;
     setDraggingKey(null);
+    setDropTarget(null);
   }
 
   // keep the canvas tall/wide enough to reach the lowest-right card
@@ -454,7 +468,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
         ref={canvasRef}
         onPointerMove={onMove}
         onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        onPointerCancel={() => endDrag()}
         className="relative"
         style={{ width: extent.w, height: extent.h }}
       >
@@ -465,8 +479,13 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
           return (
             <div
               key={card.key}
+              ref={(el) => {
+                cardRefs.current[card.key] = el;
+              }}
               onPointerDown={() => bringToFront(card.key, p)}
-              className="absolute"
+              className={`absolute ${
+                dropTarget === card.key ? 'ring-2 ring-[var(--color-accent)] ring-offset-4 ring-offset-[var(--color-ground)] rounded-sm' : ''
+              }`}
               style={{
                 left: p.x,
                 top: p.y,
@@ -603,7 +622,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       {/* masthead */}
       <div className="flex items-start justify-between gap-8 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-display font-light text-[clamp(2.1rem,5vw,3.4rem)] leading-[1.08] tracking-[-0.015em]">
+          <h1 className="font-display font-light text-[clamp(1.6rem,3.4vw,2.4rem)] leading-[1.12] tracking-[-0.015em]">
             {greeting()},{' '}
             <input
               value={userName}
@@ -614,7 +633,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
               className="font-display italic text-[var(--color-accent)] bg-transparent border-b border-transparent hover:border-[var(--color-accent)]/30 focus:border-[var(--color-accent)] outline-none transition-colors"
             />
           </h1>
-          <p className="font-mono text-[0.78rem] text-[var(--color-ink-soft)] mt-2 tracking-wide">
+          <p className="font-mono text-[0.72rem] text-[var(--color-ink-soft)] mt-2 tracking-wide">
             {format(now, 'EEEE, MMMM d')}
             <span className="text-[var(--color-ink-faint)]">
               {'  ·  '}week {weekOfYear} of 52
@@ -622,7 +641,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
 
-        <p className="font-mono-num text-[clamp(1.9rem,4vw,2.6rem)] leading-none text-[var(--color-ink)]">
+        <p className="font-mono-num text-[clamp(1.4rem,2.8vw,1.9rem)] leading-none text-[var(--color-ink)]">
           {format(now, 'HH:mm')}
           <span className="text-[0.42em] text-[var(--color-ink-faint)] ml-2 align-top tracking-widest">
             {format(now, 'ss')}
@@ -881,7 +900,7 @@ function MiniStudy() {
 
   return (
     <div>
-      <p className="font-mono-num text-4xl leading-none text-[var(--color-ink)]">
+      <p className="font-mono-num text-3xl leading-none text-[var(--color-ink)]">
         {todaysMinutes}
         <span className="text-sm font-body text-[var(--color-ink-soft)] ml-1.5">min today</span>
       </p>

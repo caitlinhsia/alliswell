@@ -80,7 +80,8 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 380;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -88,9 +89,9 @@ body {
 /* Tiny letterspaced caps in mono — the workhorse label of this design. */
 .label {
   font-family: var(--font-mono);
-  font-size: 0.63rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-size: 0.6rem;
+  font-weight: 380;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
 }
@@ -99,7 +100,8 @@ body {
    set rather than labelled. */
 .marker {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: var(--color-ink);
 }
@@ -111,8 +113,9 @@ body {
    rule, which is somebody else's signature. */
 .section {
   font-family: var(--font-display);
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.015em;
   color: var(--color-ink);
   display: inline-block;
   align-self: flex-start;
@@ -124,7 +127,8 @@ body {
    the single action a page is actually about. */
 .btn {
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 400;
   padding: 0.35rem 0.9rem;
   border: 1px solid var(--color-paper-line);
   border-radius: 3px;
@@ -141,7 +145,8 @@ body {
 
 .btn-primary {
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 400;
   padding: 0.35rem 1.1rem;
   border: 1px solid var(--color-accent);
   border-radius: 3px;
@@ -164,7 +169,8 @@ body {
   display: flex;
   align-items: center;
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
+  font-weight: 400;
   line-height: 1.1;
   text-align: left;
   padding: 0.62rem 0.7rem 0.62rem 0.85rem;
@@ -172,8 +178,8 @@ body {
   border: 1px solid transparent;
   border-left: none;
   color: var(--color-ink-soft);
-  background: color-mix(in srgb, var(--tab-color) 20%, var(--color-paper));
-  border-color: color-mix(in srgb, var(--tab-color) 38%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 9%, var(--color-paper));
+  border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
   transform: translateX(-6px);
   transition:
     transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
@@ -187,8 +193,8 @@ body {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--tab-color);
-  opacity: 0.8;
+  background: var(--color-accent);
+  opacity: 0.35;
 }
 .divider-tab:hover {
   transform: translateX(-2px);
@@ -197,8 +203,8 @@ body {
 .divider-tab[data-active='true'] {
   transform: translateX(6px);
   color: var(--color-ink);
-  background: color-mix(in srgb, var(--tab-color) 42%, var(--color-paper));
-  border-color: color-mix(in srgb, var(--tab-color) 62%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 26%, var(--color-paper));
+  border-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
   box-shadow: 0 6px 16px -12px rgba(38, 35, 29, 0.6);
 }
 .divider-tab[data-active='true']::before {
