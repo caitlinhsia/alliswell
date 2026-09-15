@@ -1,20 +1,36 @@
 @import 'tailwindcss';
 
-/* Newsreader — editorial serif, carries the display voice and body copy.
-   JetBrains Mono — every number, label and key hint. Two faces, nothing else. */
+/* Fraunces — a soft old-style serif with a bit of wonk in it; carries the
+   display voice. Karla for everything you actually read and click, because a
+   serif at 14px is what was making the interface feel stiff. Mono is kept for
+   the clock and counters only. */
 @font-face {
-  font-family: 'Newsreader';
+  font-family: 'Fraunces';
   font-style: normal;
-  font-weight: 300 600;
+  font-weight: 300 700;
   font-display: swap;
-  src: url('./assets/fonts/newsreader-var.woff2') format('woff2-variations');
+  src: url('./assets/fonts/fraunces-var.woff2') format('woff2-variations');
 }
 @font-face {
-  font-family: 'Newsreader';
+  font-family: 'Fraunces';
   font-style: italic;
-  font-weight: 300 500;
+  font-weight: 300 700;
   font-display: swap;
-  src: url('./assets/fonts/newsreader-italic-var.woff2') format('woff2-variations');
+  src: url('./assets/fonts/fraunces-italic-var.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Karla';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('./assets/fonts/karla-var.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Karla';
+  font-style: italic;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('./assets/fonts/karla-italic-var.woff2') format('woff2-variations');
 }
 @font-face {
   font-family: 'JetBrains Mono';
@@ -25,29 +41,28 @@
 }
 
 @theme {
-  /* one serif, one mono */
-  --font-display: 'Newsreader', Georgia, serif;
-  --font-body: 'Newsreader', Georgia, serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Karla', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* legacy aliases so existing markup picks up the new voice */
-  --font-hand: 'Newsreader', Georgia, serif;
-  --font-note: 'Newsreader', Georgia, serif;
-  --font-sans: 'Newsreader', Georgia, serif;
+  --font-hand: 'Fraunces', Georgia, serif;
+  --font-note: 'Karla', 'Segoe UI', sans-serif;
+  --font-sans: 'Karla', 'Segoe UI', sans-serif;
 
 /* The sheet sits on a slightly deeper ground — that separation is the whole
      identity here: this is paper on a desk, not a full-bleed web page. */
-  --color-ground: #f2eee3;
-  --color-paper: #fdfcf8;
-  --color-paper-deep: #f3efe4;
-  --color-paper-line: #e5e0d3;
-  --color-ink: #26231d;
-  --color-ink-soft: #776f62;
-  --color-ink-faint: #b3ab9b;
+  --color-ground: #efe7d8;
+  --color-paper: #fdfaf1;
+  --color-paper-deep: #f4ecdc;
+  --color-paper-line: #e3d9c6;
+  --color-ink: #33291f;
+  --color-ink-soft: #7d7060;
+  --color-ink-faint: #b6a996;
 
   /* one accent — terracotta, warm enough to read as ink on old paper */
-  --color-accent: #9c5233;
-  --color-accent-soft: #f0e5dd;
+  --color-accent: #a2552f;
+  --color-accent-soft: #f2e4d9;
 
   --color-tab-sage: #8d9c86;
   --color-tab-sky: #8199ad;
@@ -75,23 +90,30 @@ body,
   height: 100%;
 }
 
+.font-display,
+.font-hand,
+.section,
+.marker {
+  font-variation-settings: 'SOFT' 40, 'WONK' 1, 'opsz' 40;
+}
+
 body {
   margin: 0;
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 380;
+  font-size: 14.5px;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 /* Tiny letterspaced caps in mono — the workhorse label of this design. */
 .label {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  font-weight: 380;
-  letter-spacing: 0.13em;
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
 }
@@ -100,8 +122,8 @@ body {
    set rather than labelled. */
 .marker {
   font-family: var(--font-display);
-  font-size: 0.88rem;
-  font-weight: 400;
+  font-size: 0.92rem;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--color-ink);
 }
@@ -113,9 +135,9 @@ body {
    rule, which is somebody else's signature. */
 .section {
   font-family: var(--font-display);
-  font-size: 0.86rem;
-  font-weight: 400;
-  letter-spacing: 0.015em;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
   color: var(--color-ink);
   display: inline-block;
   align-self: flex-start;
@@ -246,7 +268,7 @@ body {
     to bottom,
     transparent,
     transparent 30px,
-    rgba(231, 228, 221, 0.75) 31px
+    rgba(227, 217, 198, 0.8) 31px
   );
   background-position-y: 4px;
 }
@@ -271,8 +293,8 @@ body {
 .desk-background {
   background-color: var(--color-ground);
   background-image:
-    radial-gradient(circle at 18% 10%, rgba(156, 82, 51, 0.03), transparent 55%),
-    radial-gradient(circle at 84% 82%, rgba(118, 111, 98, 0.035), transparent 50%);
+    radial-gradient(circle at 18% 10%, rgba(162, 85, 47, 0.05), transparent 55%),
+    radial-gradient(circle at 84% 82%, rgba(140, 112, 76, 0.05), transparent 50%);
 }
 
 /* A sheet of paper resting on it — and, peeking out below, the two sheets it
