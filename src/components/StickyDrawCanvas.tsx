@@ -113,7 +113,7 @@ export default function StickyDrawCanvas({
         onPointerMove={handleMove}
         onPointerUp={handleUp}
         onPointerLeave={handleUp}
-        className="bg-white/60 rounded-md touch-none cursor-crosshair w-full"
+        className="bg-[var(--color-paper)]/60 rounded-md touch-none cursor-crosshair w-full"
         style={{ height: H }}
       />
       <div className="flex items-center justify-between mt-1.5 gap-1">

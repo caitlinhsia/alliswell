@@ -21,6 +21,7 @@ function uid() {
 
 export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes' | 'todo' | 'write';
 export type HomeViewMode = 'flip' | 'desk';
+export type Theme = 'light' | 'dark';
 export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo' | 'write';
 
 type UndoSnapshot =
@@ -48,6 +49,8 @@ interface AppState {
 
   homeViewMode: HomeViewMode;
   setHomeViewMode: (mode: HomeViewMode) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 
   frontPageWidgets: FrontWidgetKey[];
   addFrontWidget: (key: FrontWidgetKey) => void;
@@ -165,6 +168,8 @@ export const useAppStore = create<AppState>()(
 
       homeViewMode: 'flip',
       setHomeViewMode: (mode) => set({ homeViewMode: mode }),
+      theme: 'light',
+      setTheme: (theme) => set({ theme }),
 
       frontPageWidgets: ['mood'],
       addFrontWidget: (key) =>

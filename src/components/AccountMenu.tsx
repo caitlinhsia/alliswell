@@ -52,6 +52,10 @@ export default function AccountMenu() {
               {session.user.email}
               {statusLabel && <span className="block mt-0.5">{statusLabel}</span>}
             </p>
+            <p className="font-note text-[0.68rem] leading-relaxed text-[var(--color-ink-faint)] px-2 pb-2">
+              Saved as you type — on this device, and in your account so it follows you to
+              other devices.
+            </p>
             <button
               onClick={() => {
                 void saveNow();
@@ -68,7 +72,7 @@ export default function AccountMenu() {
               }}
               className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)]"
             >
-              download a backup
+              save a copy to this computer
             </button>
             <button
               onClick={() => {
@@ -122,12 +126,11 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[var(--color-ink)]/25 backdrop-blur-[2px] p-4">
       <div
-        className="w-full max-w-sm bg-[#fffdf8] border-[3px] border-[var(--color-ink)] shadow-2xl p-6"
-        style={{ borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px' }}
+        className="w-full max-w-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-[0_20px_60px_-24px_rgba(38,35,29,0.55)] p-7"
       >
-        <h2 className="font-hand text-3xl mb-1">
+        <h2 className="font-display text-2xl mb-1">
           {mode === 'in' ? 'Welcome back' : 'Make an account'}
         </h2>
         <p className="font-note text-sm text-[var(--color-ink-soft)] mb-4">
@@ -162,7 +165,7 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={busy}
-            className="font-note bg-[var(--color-ink)] text-[var(--color-paper)] px-4 py-2 rounded-sm hover:bg-[var(--color-accent)] transition-colors disabled:opacity-50"
+            className="btn-primary mt-1"
           >
             {busy ? 'one moment…' : mode === 'in' ? 'Sign in' : 'Sign up'}
           </button>

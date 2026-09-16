@@ -173,6 +173,7 @@ export default function Notebook() {
               Desk
             </button>
           </nav>
+          <ThemeToggle />
           <AccountMenu />
         </div>
       </header>
@@ -187,6 +188,49 @@ export default function Notebook() {
       )}
       </div>
     </div>
+  );
+}
+
+/** Lamp switch. Two states, no system option — this is a notebook, not an OS. */
+function ThemeToggle() {
+  const theme = useAppStore((s) => s.theme);
+  const setTheme = useAppStore((s) => s.setTheme);
+  const dark = theme === 'dark';
+  return (
+    <button
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={dark ? 'Light mode' : 'Dark mode'}
+      className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] hover:bg-[var(--color-paper-deep)] transition-colors"
+    >
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden>
+        {dark ? (
+          <>
+            <circle cx="10" cy="10" r="3.6" stroke="currentColor" strokeWidth="1.3" />
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+              <line
+                key={a}
+                x1="10"
+                y1="2.4"
+                x2="10"
+                y2="4.2"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                transform={`rotate(${a} 10 10)`}
+              />
+            ))}
+          </>
+        ) : (
+          <path
+            d="M16 12.4A6.8 6.8 0 0 1 7.6 4a6.9 6.9 0 1 0 8.4 8.4Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+          />
+        )}
+      </svg>
+    </button>
   );
 }
 

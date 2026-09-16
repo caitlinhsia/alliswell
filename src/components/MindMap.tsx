@@ -330,7 +330,7 @@ export default function MindMap() {
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
                             title="Add connected idea (Enter)"
-                            className="w-5 h-5 rounded-full border border-[var(--color-ink)]/30 text-xs leading-none flex items-center justify-center hover:bg-white/50"
+                            className="w-5 h-5 rounded-full border border-[var(--color-ink)]/30 text-xs leading-none flex items-center justify-center hover:bg-[var(--color-paper-deep)]"
                           >
                             +
                           </button>
@@ -343,7 +343,7 @@ export default function MindMap() {
                               }}
                               onPointerDown={(e) => e.stopPropagation()}
                               title="Delete (Del)"
-                              className="w-5 h-5 rounded-full text-xs leading-none flex items-center justify-center hover:text-red-600 hover:bg-white/50"
+                              className="w-5 h-5 rounded-full text-xs leading-none flex items-center justify-center hover:text-red-600 hover:bg-[var(--color-paper-deep)]"
                             >
                               ×
                             </button>

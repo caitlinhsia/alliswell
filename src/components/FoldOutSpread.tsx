@@ -21,7 +21,7 @@ export default function FoldOutSpread({
     <div className="relative shrink-0" style={{ transform: `rotate(${rotate}deg)` }}>
       {!lifted && <SpiralRings count={ringCount} />}
       <div
-        className="relative flex bg-[#fffdf8] border-[3px] border-[var(--color-ink)] shadow-[5px_6px_0_rgba(51,41,31,0.10)]"
+        className="relative flex sheet"
         style={{
           borderRadius: '4px 22px 6px 20px / 14px 5px 18px 6px',
           ...(lifted ? { clipPath: tornClip() } : {}),
