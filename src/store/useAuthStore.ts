@@ -24,10 +24,15 @@ interface AuthState {
   error: string | null;
   /** Set when local and cloud both hold real data and the user must choose. */
   conflict: { local: NotebookData; cloud: NotebookData } | null;
+  /** True while the session came in from a password-reset link. */
+  recovering: boolean;
 
   init: () => void;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  dismissRecovery: () => void;
   signOut: () => Promise<void>;
   resolveConflict: (choice: 'local' | 'cloud') => Promise<void>;
   saveNow: () => Promise<void>;
@@ -47,6 +52,12 @@ function friendly(message: string): string {
   if (m.includes('email not confirmed')) return 'Confirm your email address first, then sign in.';
   if (m.includes('user already registered')) return 'That email already has an account — sign in instead.';
   if (m.includes('password should be')) return 'Password needs to be at least 6 characters.';
+  if (m.includes('same as the old') || m.includes('should be different'))
+    return 'That is the password you already have — pick a different one.';
+  if (m.includes('expired') || m.includes('invalid or has expired'))
+    return 'That reset link has expired. Ask for a new one.';
+  if (m.includes('for security purposes') || m.includes('rate limit'))
+    return 'Too many tries just now. Wait a minute and try again.';
   return message;
 }
 
@@ -56,6 +67,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   status: 'idle',
   error: null,
   conflict: null,
+  recovering: false,
 
   init: () => {
     if (started || !supabase) return;
@@ -68,6 +80,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     supabase.auth.onAuthStateChange((event, session) => {
       set({ session });
+      if (event === 'PASSWORD_RECOVERY') set({ recovering: true, error: null });
       if (event === 'SIGNED_IN' && session) void afterSignIn(set, get);
       if (event === 'SIGNED_OUT') stopWatching(set);
     });
@@ -94,6 +107,32 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     set({ status: 'idle' });
   },
+
+  sendPasswordReset: async (email) => {
+    if (!supabase) return;
+    set({ error: null, status: 'syncing' });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) {
+      set({ error: friendly(error.message), status: 'error' });
+      throw error;
+    }
+    set({ status: 'idle' });
+  },
+
+  updatePassword: async (password) => {
+    if (!supabase) return;
+    set({ error: null, status: 'syncing' });
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      set({ error: friendly(error.message), status: 'error' });
+      throw error;
+    }
+    set({ recovering: false, status: 'idle' });
+  },
+
+  dismissRecovery: () => set({ recovering: false, error: null }),
 
   signOut: async () => {
     if (!supabase) return;

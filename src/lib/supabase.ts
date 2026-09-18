@@ -12,6 +12,8 @@ export const isCloudEnabled = Boolean(url && anonKey);
 
 export const supabase: SupabaseClient | null = isCloudEnabled
   ? createClient(url!, anonKey!, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      // detectSessionInUrl is what picks the recovery token out of the link
+      // the reset email sends you to.
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
     })
   : null;

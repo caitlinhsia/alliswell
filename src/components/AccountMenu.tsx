@@ -90,6 +90,7 @@ export default function AccountMenu() {
       </div>
 
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} />}
+      <RecoveryDialog />
     </>
   );
 }
@@ -97,8 +98,9 @@ export default function AccountMenu() {
 function AuthDialog({ onClose }: { onClose: () => void }) {
   const signIn = useAuthStore((s) => s.signIn);
   const signUp = useAuthStore((s) => s.signUp);
+  const sendPasswordReset = useAuthStore((s) => s.sendPasswordReset);
   const error = useAuthStore((s) => s.error);
-  const [mode, setMode] = useState<'in' | 'up'>('in');
+  const [mode, setMode] = useState<'in' | 'up' | 'forgot'>('in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -106,11 +108,14 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !password) return;
+    if (!email.trim() || (mode !== 'forgot' && !password)) return;
     setBusy(true);
     setNotice(null);
     try {
-      if (mode === 'in') {
+      if (mode === 'forgot') {
+        await sendPasswordReset(email.trim());
+        setNotice(`If ${email.trim()} has an account, a reset link is on its way. It works once, and expires in an hour.`);
+      } else if (mode === 'in') {
         await signIn(email.trim(), password);
         onClose();
       } else {
@@ -131,10 +136,12 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
         className="w-full max-w-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-[0_20px_60px_-24px_rgba(38,35,29,0.55)] p-7"
       >
         <h2 className="font-display text-2xl mb-1">
-          {mode === 'in' ? 'Welcome back' : 'Make an account'}
+          {mode === 'in' ? 'Welcome back' : mode === 'up' ? 'Make an account' : 'Forgotten password'}
         </h2>
         <p className="font-note text-sm text-[var(--color-ink-soft)] mb-4">
-          Keeps your notebook on every device you sign in from.
+          {mode === 'forgot'
+            ? 'Type the email you signed up with and we will send you a link to set a new password.'
+            : 'Keeps your notebook on every device you sign in from.'}
         </p>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -148,16 +155,31 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
               className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
             />
           </label>
-          <label className="font-note text-xs text-[var(--color-ink-soft)]">
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
-            />
-          </label>
+          {mode !== 'forgot' && (
+            <label className="font-note text-xs text-[var(--color-ink-soft)]">
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
+                className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
+              />
+            </label>
+          )}
+          {mode === 'in' && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode('forgot');
+                setNotice(null);
+              }}
+              className="font-note text-xs underline text-[var(--color-ink-soft)] self-start -mt-1"
+            >
+              forgotten your password?
+            </button>
+          )}
 
           {error && <p className="font-note text-xs text-[var(--color-note-rust)]">{error}</p>}
           {notice && <p className="font-note text-xs text-[var(--color-note-moss)]">{notice}</p>}
@@ -167,21 +189,126 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
             disabled={busy}
             className="btn-primary mt-1"
           >
-            {busy ? 'one moment…' : mode === 'in' ? 'Sign in' : 'Sign up'}
+            {busy
+              ? 'one moment…'
+              : mode === 'in'
+              ? 'Sign in'
+              : mode === 'up'
+              ? 'Sign up'
+              : 'Send the link'}
           </button>
         </form>
 
         <div className="flex items-center justify-between mt-4">
           <button
-            onClick={() => setMode(mode === 'in' ? 'up' : 'in')}
+            onClick={() => {
+              setMode(mode === 'in' ? 'up' : 'in');
+              setNotice(null);
+            }}
             className="font-note text-xs underline text-[var(--color-ink-soft)]"
           >
-            {mode === 'in' ? 'no account yet?' : 'already have one?'}
+            {mode === 'in' ? 'no account yet?' : mode === 'up' ? 'already have one?' : 'back to signing in'}
           </button>
           <button onClick={onClose} className="font-note text-xs text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">
             keep using this device only
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Shown when the app is opened through a reset link. Supabase has already
+ * exchanged the token for a session by then, so all that is left is choosing
+ * the new password.
+ */
+function RecoveryDialog() {
+  const recovering = useAuthStore((s) => s.recovering);
+  const updatePassword = useAuthStore((s) => s.updatePassword);
+  const dismissRecovery = useAuthStore((s) => s.dismissRecovery);
+  const error = useAuthStore((s) => s.error);
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
+
+  if (!recovering) return null;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) return;
+    if (password !== confirm) {
+      setMismatch(true);
+      return;
+    }
+    setMismatch(false);
+    setBusy(true);
+    try {
+      await updatePassword(password);
+      // the link leaves a token in the address bar; do not leave it lying there
+      window.history.replaceState(null, '', window.location.pathname);
+    } catch {
+      /* error surfaced from the store */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[var(--color-ink)]/25 backdrop-blur-[2px] p-4">
+      <div className="w-full max-w-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-[0_20px_60px_-24px_rgba(38,35,29,0.55)] p-7">
+        <h2 className="font-display text-2xl mb-1">Set a new password</h2>
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-4">
+          You are signed in from the reset link. Pick a password and it takes effect everywhere.
+        </p>
+
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <label className="font-note text-xs text-[var(--color-ink-soft)]">
+            New password
+            <input
+              type="password"
+              autoFocus
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              autoComplete="new-password"
+              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
+            />
+          </label>
+          <label className="font-note text-xs text-[var(--color-ink-soft)]">
+            Again, to be sure
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              minLength={6}
+              autoComplete="new-password"
+              className="mt-1 w-full font-note text-base border border-[var(--color-paper-line)] rounded-sm px-3 py-2 bg-[var(--color-paper)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
+            />
+          </label>
+
+          {mismatch && (
+            <p className="font-note text-xs text-[var(--color-note-rust)]">
+              Those two do not match.
+            </p>
+          )}
+          {error && <p className="font-note text-xs text-[var(--color-note-rust)]">{error}</p>}
+
+          <button type="submit" disabled={busy} className="btn-primary mt-1">
+            {busy ? 'one moment…' : 'Save the new password'}
+          </button>
+        </form>
+
+        <button
+          onClick={() => {
+            dismissRecovery();
+            window.history.replaceState(null, '', window.location.pathname);
+          }}
+          className="font-note text-xs text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] mt-4"
+        >
+          not now — keep the old password
+        </button>
       </div>
     </div>
   );
