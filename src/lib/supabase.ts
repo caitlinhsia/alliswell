@@ -23,6 +23,24 @@ export const entryHash: URLSearchParams = new URLSearchParams(
   typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')
 );
 
+/** The query string, snapshotted at the same moment and for the same reason. */
+export const entryQuery: URLSearchParams = new URLSearchParams(
+  typeof window === 'undefined' ? '' : window.location.search
+);
+
+/**
+ * Supabase can land a recovery in three shapes depending on the project's
+ * flow: tokens in the fragment, a PKCE code in the query, or just type=
+ * recovery. Treat any of them as "this person came here to set a password".
+ */
+export const arrivedForRecovery =
+  entryHash.get('type') === 'recovery' ||
+  entryQuery.get('type') === 'recovery' ||
+  (entryHash.has('access_token') && entryHash.get('type') !== 'signup');
+
+/** A PKCE link puts a code in the query that must be exchanged by hand. */
+export const entryCode = entryQuery.get('code');
+
 export const supabase: SupabaseClient | null = isCloudEnabled
   ? createClient(url!, anonKey!, {
       // detectSessionInUrl is what picks the recovery token out of the link

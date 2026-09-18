@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
-import { supabase, isCloudEnabled, entryHash } from '../lib/supabase';
+import {
+  supabase,
+  isCloudEnabled,
+  entryHash,
+  entryQuery,
+  entryCode,
+  arrivedForRecovery,
+} from '../lib/supabase';
 import {
   applyState,
   fingerprint,
@@ -33,6 +40,7 @@ interface AuthState {
   sendPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   dismissRecovery: () => void;
+  startPasswordChange: () => void;
   signOut: () => Promise<void>;
   resolveConflict: (choice: 'local' | 'cloud') => Promise<void>;
   saveNow: () => Promise<void>;
@@ -74,21 +82,37 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     started = true;
 
     // How we arrived, read from the snapshot taken before the client cleared it.
-    const hashError = entryHash.get('error_code') ?? entryHash.get('error');
+    const hashError =
+      entryHash.get('error_code') ??
+      entryHash.get('error') ??
+      entryQuery.get('error_code') ??
+      entryQuery.get('error');
     if (hashError) {
       set({
         error:
           hashError === 'otp_expired'
             ? 'That reset link has already been used or has expired. Ask for a new one.'
-            : entryHash.get('error_description')?.replace(/\+/g, ' ') ??
-              'That link did not work. Ask for a new one.',
+            : (entryHash.get('error_description') ?? entryQuery.get('error_description'))
+                ?.replace(/\+/g, ' ') ?? 'That link did not work. Ask for a new one.',
       });
       window.history.replaceState(null, '', window.location.pathname);
     }
 
     // Arriving with a recovery token means "set a new password", whether or not
     // the PASSWORD_RECOVERY event lands before this runs.
-    if (entryHash.get('type') === 'recovery') set({ recovering: true, error: null });
+    if (arrivedForRecovery) set({ recovering: true, error: null });
+
+    // A PKCE link carries a code the client does not pick up on its own.
+    if (entryCode) {
+      void supabase.auth
+        .exchangeCodeForSession(entryCode)
+        .then(({ error }) => {
+          if (error) set({ error: friendly(error.message) });
+          else set({ recovering: true, error: null });
+          window.history.replaceState(null, '', window.location.pathname);
+        })
+        .catch(() => {});
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, ready: true });
@@ -150,6 +174,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   dismissRecovery: () => set({ recovering: false, error: null }),
+
+  /** Same dialog, reached deliberately from the account menu. */
+  startPasswordChange: () => set({ recovering: true, error: null }),
 
   signOut: async () => {
     if (!supabase) return;

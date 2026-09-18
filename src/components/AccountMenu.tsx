@@ -8,6 +8,7 @@ export default function AccountMenu() {
   const status = useAuthStore((s) => s.status);
   const signOut = useAuthStore((s) => s.signOut);
   const saveNow = useAuthStore((s) => s.saveNow);
+  const startPasswordChange = useAuthStore((s) => s.startPasswordChange);
   const error = useAuthStore((s) => s.error);
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -79,6 +80,15 @@ export default function AccountMenu() {
               className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)]"
             >
               save a copy to this computer
+            </button>
+            <button
+              onClick={() => {
+                startPasswordChange();
+                setOpen(false);
+              }}
+              className="w-full text-left font-note text-sm px-2 py-1.5 rounded-sm hover:bg-[var(--color-paper-deep)]"
+            >
+              change password
             </button>
             <button
               onClick={() => {
@@ -266,7 +276,7 @@ function RecoveryDialog() {
       <div className="w-full max-w-sm bg-[var(--color-paper)] border border-[var(--color-paper-line)] rounded-sm shadow-[0_20px_60px_-24px_rgba(38,35,29,0.55)] p-7">
         <h2 className="font-display text-2xl mb-1">Set a new password</h2>
         <p className="font-note text-sm text-[var(--color-ink-soft)] mb-4">
-          You are signed in from the reset link. Pick a password and it takes effect everywhere.
+          Pick a password — it takes effect everywhere you are signed in.
         </p>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -313,7 +323,7 @@ function RecoveryDialog() {
           }}
           className="font-note text-xs text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] mt-4"
         >
-          not now — keep the old password
+          cancel — keep the old password
         </button>
       </div>
     </div>
