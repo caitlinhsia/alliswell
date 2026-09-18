@@ -59,4 +59,57 @@ this device's notebook uploaded, and an empty device pulls the account's down.
 
 After that it saves automatically about a second after you stop typing. The dot
 next to your name is green when signed in, and the menu has **save now** and
-**download a backup**.
+**save a copy to this computer**.
+
+## Passwords
+
+Signed in already? **Account menu → change password.** No email involved, so
+nothing can expire. That is the path to use whenever you are not locked out.
+
+### Making the emailed reset link reliable
+
+Forgotten-password emails send on the free plan, but the link Supabase puts in
+them points at its own `/auth/v1/verify` endpoint, which spends the one-time
+token on an ordinary GET. Mail providers open links to scan them for malware,
+so the token is often spent before you click — which arrives as *"this link
+has already been used or has expired"* on a link nobody touched.
+
+The fix is a link that points at the app instead, because the token is then
+only redeemed when the app's JavaScript calls `verifyOtp`, and scanners do not
+run JavaScript. The app already handles that link shape. Putting it in the
+email needs template editing, which Supabase gates behind custom SMTP.
+
+**1. Get an SMTP sender.** [Resend](https://resend.com) has a free tier that is
+ample here. Sign up with the same address as your Supabase account, then
+**API Keys → Create API Key** and copy it — it is shown once.
+
+Without a verified domain, Resend only delivers to the address you signed up
+with. For a notebook with one user that is fine; add a domain later if other
+people ever sign up.
+
+**2. Point Supabase at it.** Project → **Authentication → Emails → SMTP
+Settings** → enable custom SMTP:
+
+| Field | Value |
+| --- | --- |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | the API key from step 1 |
+| Sender email | `onboarding@resend.dev` |
+| Sender name | `allisw3ll` |
+
+**3. Edit the template.** The "set up custom SMTP to edit templates" notice is
+now gone. Open **Reset Password** and replace `{{ .ConfirmationURL }}` in the
+link's `href` with:
+
+```
+{{ .SiteURL }}/?token_hash={{ .TokenHash }}&type=recovery
+```
+
+**4. Check the URLs.** **Authentication → URL Configuration**: Site URL is
+`https://allisw3ll.vercel.app`, and the same URL is listed under Redirect URLs.
+`{{ .SiteURL }}` in the template is exactly this value, so it has to be right.
+
+Then request a fresh reset email. Old links cannot be revived — they were
+already spent.
