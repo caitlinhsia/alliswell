@@ -130,7 +130,9 @@ function AuthDialog({ onClose }: { onClose: () => void }) {
     try {
       if (mode === 'forgot') {
         await sendPasswordReset(email.trim());
-        setNotice(`If ${email.trim()} has an account, a reset link is on its way. It works once, and expires in an hour.`);
+        setNotice(
+          `If ${email.trim()} has an account, a reset link is on its way. Click it promptly — it only works once, and some mail apps spend it by scanning it. If it keeps failing, sign in and use “change password” instead.`
+        );
       } else if (mode === 'in') {
         await signIn(email.trim(), password);
         onClose();

@@ -64,7 +64,7 @@ function friendly(message: string): string {
   if (m.includes('same as the old') || m.includes('should be different'))
     return 'That is the password you already have — pick a different one.';
   if (m.includes('expired') || m.includes('invalid or has expired'))
-    return 'That reset link has expired. Ask for a new one.';
+    return 'That reset link has expired. Ask for a new one, or sign in and use “change password” in your account menu.';
   if (m.includes('for security purposes') || m.includes('rate limit'))
     return 'Too many tries just now. Wait a minute and try again.';
   return message;
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       set({
         error:
           hashError === 'otp_expired'
-            ? 'That reset link has already been used or has expired. Ask for a new one.'
+            ? 'That reset link was already spent — mail providers often open links to scan them, which uses them up. Ask for a new one and click it straight away, or sign in and use “change password” in your account menu.'
             : (entryHash.get('error_description') ?? entryQuery.get('error_description'))
                 ?.replace(/\+/g, ' ') ?? 'That link did not work. Ask for a new one.',
       });
