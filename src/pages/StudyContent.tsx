@@ -25,8 +25,11 @@ export default function StudyContent() {
   const [newTodo, setNewTodo] = useState('');
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
   const [editTodoText, setEditTodoText] = useState('');
+  const [mode, setMode] = useState<'countdown' | 'stopwatch'>('countdown');
   const [duration, setDuration] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [elapsed, setElapsed] = useState(0);
+  const [laps, setLaps] = useState<number[]>([]);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<number | null>(null);
 
@@ -35,24 +38,27 @@ export default function StudyContent() {
   }, [subjects, activeSubjectId]);
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = window.setInterval(() => {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            window.clearInterval(intervalRef.current!);
-            setRunning(false);
-            if (activeSubjectId) logStudySession(activeSubjectId, duration);
-            return duration * 60;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    }
+    if (!running) return;
+    intervalRef.current = window.setInterval(() => {
+      if (mode === 'stopwatch') {
+        setElapsed((e) => e + 1);
+        return;
+      }
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          window.clearInterval(intervalRef.current!);
+          setRunning(false);
+          if (activeSubjectId) logStudySession(activeSubjectId, duration);
+          return duration * 60;
+        }
+        return s - 1;
+      });
+    }, 1000);
     return () => {
       if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running]);
+  }, [running, mode]);
 
   function resetTimer(mins: number) {
     setRunning(false);
@@ -60,8 +66,20 @@ export default function StudyContent() {
     setSecondsLeft(mins * 60);
   }
 
-  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-  const ss = String(secondsLeft % 60).padStart(2, '0');
+  /** Stop the stopwatch and bank whole minutes against the subject. */
+  function finishStopwatch() {
+    setRunning(false);
+    const mins = Math.round(elapsed / 60);
+    if (mins > 0 && activeSubjectId) logStudySession(activeSubjectId, mins);
+    setElapsed(0);
+    setLaps([]);
+  }
+
+  const shown = mode === 'stopwatch' ? elapsed : secondsLeft;
+  const hh = Math.floor(shown / 3600);
+  const mm = String(Math.floor((shown % 3600) / 60)).padStart(2, '0');
+  const ss = String(shown % 60).padStart(2, '0');
+  const clock = hh > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
 
   const todayMinutes = studySessions
     .filter((s) => s.date === todayStr())
@@ -104,40 +122,102 @@ export default function StudyContent() {
           </div>
 
           <div className="text-center">
-            <p className="font-hand text-7xl tabular-nums">
-              {mm}:{ss}
-            </p>
-            <div className="flex justify-center gap-2 mt-3">
-              {DURATIONS.map((d) => (
+            <div className="flex justify-center gap-4 mb-2">
+              {(['countdown', 'stopwatch'] as const).map((m) => (
                 <button
-                  key={d}
-                  onClick={() => resetTimer(d)}
-                  disabled={running}
-                  className={`font-note text-xs px-2.5 py-1 rounded-sm border disabled:opacity-40 ${
-                    duration === d
-                      ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
-                      : 'border-[var(--color-paper-line)]'
+                  key={m}
+                  onClick={() => {
+                    setRunning(false);
+                    setMode(m);
+                  }}
+                  className={`label pb-1 border-b transition-colors ${
+                    mode === m
+                      ? 'text-[var(--color-ink)] border-[var(--color-accent)]'
+                      : 'text-[var(--color-ink-faint)] border-transparent hover:text-[var(--color-ink-soft)]'
                   }`}
                 >
-                  {d}m
+                  {m === 'countdown' ? 'Timer' : 'Stopwatch'}
                 </button>
               ))}
             </div>
-            <div className="flex justify-center gap-3 mt-4">
-              <button
-                onClick={() => setRunning((r) => !r)}
-                disabled={!activeSubjectId}
-                className="btn-primary"
-              >
-                {running ? 'Pause' : 'Start'}
-              </button>
-              <button
-                onClick={() => resetTimer(duration)}
-                className="btn"
-              >
-                Reset
-              </button>
-            </div>
+
+            <p className="font-hand text-6xl tabular-nums">{clock}</p>
+
+            {mode === 'countdown' ? (
+              <>
+                <div className="flex justify-center gap-2 mt-3">
+                  {DURATIONS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => resetTimer(d)}
+                      disabled={running}
+                      className={`font-note text-xs px-2.5 py-1 rounded-sm border disabled:opacity-40 ${
+                        duration === d
+                          ? 'border-[var(--color-ink)] bg-[var(--color-paper-deep)]'
+                          : 'border-[var(--color-paper-line)]'
+                      }`}
+                    >
+                      {d}m
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-center gap-3 mt-4">
+                  <button
+                    onClick={() => setRunning((r) => !r)}
+                    disabled={!activeSubjectId}
+                    className="btn-primary"
+                  >
+                    {running ? 'Pause' : 'Start'}
+                  </button>
+                  <button onClick={() => resetTimer(duration)} className="btn">
+                    Reset
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-center gap-3 mt-4">
+                  <button
+                    onClick={() => setRunning((r) => !r)}
+                    disabled={!activeSubjectId}
+                    className="btn-primary"
+                  >
+                    {running ? 'Pause' : elapsed > 0 ? 'Resume' : 'Start'}
+                  </button>
+                  <button
+                    onClick={() => setLaps((l) => [elapsed, ...l])}
+                    disabled={!running}
+                    className="btn"
+                  >
+                    Lap
+                  </button>
+                  <button onClick={finishStopwatch} disabled={elapsed === 0} className="btn">
+                    Finish
+                  </button>
+                </div>
+                <p className="label mt-2">
+                  {elapsed === 0
+                    ? 'counts up · Finish banks the minutes'
+                    : `${Math.round(elapsed / 60)} min so far`}
+                </p>
+                {laps.length > 0 && (
+                  <ul className="mt-3 max-h-24 overflow-y-auto text-left mx-auto w-40">
+                    {laps.map((l, i) => (
+                      <li
+                        key={i}
+                        className="flex justify-between font-mono-num text-[0.7rem] text-[var(--color-ink-soft)] border-b border-[var(--color-paper-line)]/60 py-0.5"
+                      >
+                        <span>lap {laps.length - i}</span>
+                        <span>
+                          {String(Math.floor(l / 60)).padStart(2, '0')}:
+                          {String(l % 60).padStart(2, '0')}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
             {!activeSubjectId && (
               <p className="font-note text-xs text-[var(--color-ink-soft)] mt-2">
                 Add a subject below to start timing.
