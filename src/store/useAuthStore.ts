@@ -6,6 +6,7 @@ import {
   entryHash,
   entryQuery,
   entryCode,
+  entryTokenHash,
   arrivedForRecovery,
 } from '../lib/supabase';
 import {
@@ -101,6 +102,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Arriving with a recovery token means "set a new password", whether or not
     // the PASSWORD_RECOVERY event lands before this runs.
     if (arrivedForRecovery) set({ recovering: true, error: null });
+
+    // A token_hash link is redeemed here, deliberately, and not by whatever
+    // fetched the URL before us.
+    if (entryTokenHash) {
+      const type = (entryQuery.get('type') ?? 'recovery') as 'recovery' | 'email' | 'signup';
+      void supabase.auth
+        .verifyOtp({ token_hash: entryTokenHash, type })
+        .then(({ error }) => {
+          if (error) set({ error: friendly(error.message), recovering: false });
+          else if (type === 'recovery') set({ recovering: true, error: null });
+          window.history.replaceState(null, '', window.location.pathname);
+        })
+        .catch(() => {});
+    }
 
     // A PKCE link carries a code the client does not pick up on its own.
     if (entryCode) {

@@ -41,6 +41,16 @@ export const arrivedForRecovery =
 /** A PKCE link puts a code in the query that must be exchanged by hand. */
 export const entryCode = entryQuery.get('code');
 
+/**
+ * A token_hash link points at this app rather than at Supabase's verify
+ * endpoint, and is only redeemed once this code calls verifyOtp. That matters
+ * because mail providers pre-fetch links to scan them: a link that redeems
+ * itself on GET is spent before the person ever clicks it, which is what
+ * "this link has expired" usually means. Scanners do not run our JavaScript,
+ * so this survives them.
+ */
+export const entryTokenHash = entryQuery.get('token_hash');
+
 export const supabase: SupabaseClient | null = isCloudEnabled
   ? createClient(url!, anonKey!, {
       // detectSessionInUrl is what picks the recovery token out of the link
