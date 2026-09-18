@@ -26,6 +26,7 @@ export default function DateField({
   className = '',
   allowClear = true,
   compact = false,
+  display,
 }: {
   value?: string; // yyyy-MM-dd
   onChange: (v: string | undefined) => void;
@@ -33,6 +34,8 @@ export default function DateField({
   className?: string;
   allowClear?: boolean;
   compact?: boolean;
+  /** Overrides the formatted date, for labels like "today" or "tomorrow". */
+  display?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(() => (value ? parseISO(value) : new Date()));
@@ -94,7 +97,7 @@ export default function DateField({
           } ${!selected ? 'text-[var(--color-ink-soft)]/70' : ''}`
         }
       >
-        {selected ? format(selected, compact ? 'MMM d' : 'MMM d, yyyy') : placeholder}
+        {selected ? display ?? format(selected, compact ? 'MMM d' : 'MMM d, yyyy') : placeholder}
       </button>
 
       {open && createPortal(
