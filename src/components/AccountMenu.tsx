@@ -8,8 +8,14 @@ export default function AccountMenu() {
   const status = useAuthStore((s) => s.status);
   const signOut = useAuthStore((s) => s.signOut);
   const saveNow = useAuthStore((s) => s.saveNow);
+  const error = useAuthStore((s) => s.error);
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+
+  // a failed reset link leaves an error behind with no dialog open to show it
+  useEffect(() => {
+    if (error && !session) setAuthOpen(true);
+  }, [error, session]);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

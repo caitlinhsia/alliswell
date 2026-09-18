@@ -73,6 +73,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (started || !supabase) return;
     started = true;
 
+    // A reset link that failed comes back as an error in the URL fragment
+    // rather than a session, so read it before Supabase clears the hash.
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const hashError = hash.get('error_code') ?? hash.get('error');
+    if (hashError) {
+      set({
+        error:
+          hashError === 'otp_expired'
+            ? 'That reset link has already been used or has expired. Ask for a new one.'
+            : hash.get('error_description')?.replace(/\+/g, ' ') ?? 'That link did not work.',
+      });
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, ready: true });
       if (data.session) void afterSignIn(set, get);

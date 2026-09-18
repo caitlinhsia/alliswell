@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type {
   JournalEntry,
   MindMapNode,
+  Note,
   Mood,
   NoteColor,
   Priority,
@@ -27,6 +28,7 @@ export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo' | 
 type UndoSnapshot =
   | { kind: 'schedule'; item: ScheduleItem }
   | { kind: 'todo'; item: TodoItem }
+  | { kind: 'note'; item: Note }
   | { kind: 'subject'; item: Subject; todos: StudyTodo[]; sessions: StudySession[] }
   | { kind: 'studyTodo'; item: StudyTodo }
   | { kind: 'sticky'; item: StickyNote }
@@ -88,8 +90,12 @@ interface AppState {
   removeScheduleItem: (id: string) => void;
 
   todos: TodoItem[];
-  addTodo: (text: string, priority: Priority, dueDate?: string) => void;
-  updateTodo: (id: string, patch: Partial<Pick<TodoItem, 'text' | 'priority' | 'dueDate'>>) => void;
+  addTodo: (text: string, priority: Priority, dueDate?: string, subjectId?: string) => void;
+  updateTodo: (
+    id: string,
+    patch: Partial<Pick<TodoItem, 'text' | 'description' | 'priority' | 'dueDate' | 'subjectId'>>
+  ) => void;
+  clearCompletedTodos: () => void;
   toggleTodo: (id: string) => void;
   removeTodo: (id: string) => void;
 
@@ -118,6 +124,12 @@ interface AppState {
   bringStickyNoteToFront: (id: string) => void;
 
   writeNoteHtml: string;
+  notes: Note[];
+  activeNoteId: string | null;
+  addNote: (title?: string) => string;
+  updateNote: (id: string, patch: Partial<Pick<Note, 'title' | 'html' | 'pinned'>>) => void;
+  removeNote: (id: string) => void;
+  setActiveNote: (id: string | null) => void;
   setWriteNoteHtml: (html: string) => void;
 
   mindMapNodes: MindMapNode[];
@@ -144,6 +156,8 @@ export const useAppStore = create<AppState>()(
               return { schedule: [...state.schedule, s.item], pendingUndo: null };
             case 'todo':
               return { todos: [...state.todos, s.item], pendingUndo: null };
+            case 'note':
+              return { notes: [s.item, ...state.notes], pendingUndo: null };
             case 'subject':
               return {
                 subjects: [...state.subjects, s.item],
@@ -273,11 +287,11 @@ export const useAppStore = create<AppState>()(
         }),
 
       todos: [],
-      addTodo: (text, priority, dueDate) =>
+      addTodo: (text, priority, dueDate, subjectId) =>
         set((s) => ({
           todos: [
             ...s.todos,
-            { id: uid(), text, priority, dueDate, done: false, createdAt: Date.now() },
+            { id: uid(), text, priority, dueDate, subjectId, done: false, createdAt: Date.now() },
           ],
         })),
       updateTodo: (id, patch) =>
@@ -286,8 +300,13 @@ export const useAppStore = create<AppState>()(
         })),
       toggleTodo: (id) =>
         set((s) => ({
-          todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+          todos: s.todos.map((t) =>
+            t.id === id
+              ? { ...t, done: !t.done, completedAt: t.done ? undefined : Date.now() }
+              : t
+          ),
         })),
+      clearCompletedTodos: () => set((s) => ({ todos: s.todos.filter((t) => !t.done) })),
       removeTodo: (id) =>
         set((s) => {
           const item = s.todos.find((t) => t.id === id);
@@ -437,6 +456,44 @@ export const useAppStore = create<AppState>()(
       writeNoteHtml: '',
       setWriteNoteHtml: (html) => set({ writeNoteHtml: html }),
 
+      notes: [],
+      activeNoteId: null,
+      addNote: (title) => {
+        const id = uid();
+        const now = Date.now();
+        set((s) => ({
+          notes: [
+            { id, title: title ?? '', html: '', createdAt: now, updatedAt: now },
+            ...s.notes,
+          ],
+          activeNoteId: id,
+        }));
+        return id;
+      },
+      updateNote: (id, patch) =>
+        set((s) => ({
+          notes: s.notes.map((n) =>
+            n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n
+          ),
+        })),
+      removeNote: (id) =>
+        set((s) => {
+          const item = s.notes.find((n) => n.id === id);
+          const rest = s.notes.filter((n) => n.id !== id);
+          return {
+            notes: rest,
+            activeNoteId: s.activeNoteId === id ? rest[0]?.id ?? null : s.activeNoteId,
+            pendingUndo: item
+              ? {
+                  snapshot: { kind: 'note', item },
+                  label: `Deleted "${item.title || 'Untitled'}"`,
+                  at: Date.now(),
+                }
+              : s.pendingUndo,
+          };
+        }),
+      setActiveNote: (id) => set({ activeNoteId: id }),
+
       mindMapNodes: [],
       addMindMapNode: (parentId, text, x, y, color) => {
         const id = uid();
@@ -477,11 +534,23 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'alliswell-storage',
-      version: 1,
+      version: 2,
       partialize: ({ pendingUndo: _pendingUndo, ...rest }) => rest,
       // v0 kept board notes and write-page notes in two arrays and used pastel color names
       migrate: (persisted, version) => {
-        if (version >= 1) return persisted as AppState;
+        const asV2 = (state: Record<string, unknown>) => {
+          if (Array.isArray(state.notes)) return state;
+          const html = typeof state.writeNoteHtml === 'string' ? state.writeNoteHtml : '';
+          const now = Date.now();
+          // the one big write page becomes the first saved note, so nothing is lost
+          const notes: Note[] = html.trim()
+            ? [{ id: uid(), title: 'My notes', html, createdAt: now, updatedAt: now }]
+            : [];
+          return { ...state, notes, activeNoteId: notes[0]?.id ?? null };
+        };
+
+        if (version >= 2) return persisted as AppState;
+        if (version === 1) return asV2(persisted as Record<string, unknown>) as unknown as AppState;
         const old = persisted as Record<string, unknown>;
         const legacyColor: Record<string, NoteColor> = {
           yellow: 'ochre',
@@ -502,7 +571,7 @@ export const useAppStore = create<AppState>()(
           color: fix(n.color),
           page: 'write' as StickyPage,
         }));
-        return {
+        return asV2({
           ...old,
           stickyNotes: [...board, ...write],
           writeStickyNotes: undefined,
@@ -511,7 +580,7 @@ export const useAppStore = create<AppState>()(
             ...n,
             color: fix(n.color),
           })),
-        } as unknown as AppState;
+        }) as unknown as AppState;
       },
     }
   )

@@ -93,8 +93,24 @@ export type Priority = 'high' | 'medium' | 'low';
 export interface TodoItem {
   id: string;
   text: string;
+  /** Free-text detail under the title, as in Todoist. */
+  description?: string;
   priority: Priority;
   dueDate?: string; // yyyy-MM-dd
+  /** Which subject this belongs to, if any — drives its colour. */
+  subjectId?: string;
   done: boolean;
   createdAt: number;
+  /** When it was ticked, so the completed list can be ordered and grouped. */
+  completedAt?: number;
+}
+
+/** A saved note, as in a notes app: many of them, each with its own title. */
+export interface Note {
+  id: string;
+  title: string;
+  html: string;
+  createdAt: number;
+  updatedAt: number;
+  pinned?: boolean;
 }
