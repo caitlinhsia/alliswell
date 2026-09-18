@@ -3,7 +3,13 @@ import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import { todayStr } from '../lib/date';
 import { NOTE_COLORS } from '../lib/colors';
-import type { NoteColor, ScheduleItem } from '../types';
+import type { NoteColor, Priority, ScheduleItem } from '../types';
+
+const PRIORITY_DOT: Record<Priority, string> = {
+  high: 'var(--color-note-rust)',
+  medium: 'var(--color-note-ochre)',
+  low: 'var(--color-note-sage)',
+};
 
 const START_HOUR = 6;
 const END_HOUR = 24;
@@ -46,11 +52,15 @@ export default function ScheduleContent() {
   const updateScheduleItem = useAppStore((s) => s.updateScheduleItem);
   const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
+  const todos = useAppStore((s) => s.todos);
+  const toggleTodo = useAppStore((s) => s.toggleTodo);
+  const updateTodo = useAppStore((s) => s.updateTodo);
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [allDayDraft, setAllDayDraft] = useState<{ date: string; text: string } | null>(null);
+  const [dropDay, setDropDay] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -70,6 +80,8 @@ export default function ScheduleContent() {
 
   const timed = schedule.filter((s) => s.time && dayKeys.includes(s.date));
   const allDay = schedule.filter((s) => !s.time && dayKeys.includes(s.date));
+  // a to-do with a due date is a thing happening on a day; it belongs here too
+  const dueTodos = todos.filter((t) => t.dueDate && dayKeys.includes(t.dueDate));
 
   /** Which day column and minute the pointer is over. */
   function pointToSlot(e: PointerEvent | React.PointerEvent) {
@@ -211,7 +223,23 @@ export default function ScheduleContent() {
       <div className="shrink-0 flex border-b border-[var(--color-paper-line)] min-h-[34px]">
         <div className="w-12 shrink-0 label pt-1.5 pr-1 text-right">all day</div>
         {dayKeys.map((key) => (
-          <div key={key} className="flex-1 min-w-0 border-l border-[var(--color-paper-line)]/60 p-1 space-y-1">
+          <div
+            key={key}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDropDay(key);
+            }}
+            onDragLeave={() => setDropDay((d) => (d === key ? null : d))}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDropDay(null);
+              const id = e.dataTransfer.getData('text/todo');
+              if (id) updateTodo(id, { dueDate: key });
+            }}
+            className={`flex-1 min-w-0 border-l border-[var(--color-paper-line)]/60 p-1 space-y-1 transition-colors ${
+              dropDay === key ? 'bg-[var(--color-accent)]/10' : ''
+            }`}
+          >
             {allDay
               .filter((s) => s.date === key)
               .map((s) => (
@@ -230,6 +258,35 @@ export default function ScheduleContent() {
                   {s.title}
                 </button>
               ))}
+            {dueTodos
+              .filter((t) => t.dueDate === key)
+              .map((t) => (
+                <div
+                  key={t.id}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData('text/todo', t.id)}
+                  title="A to-do due today · drag to another day to move it"
+                  className="flex items-center gap-1.5 text-[0.72rem] cursor-grab active:cursor-grabbing"
+                >
+                  <button
+                    onClick={() => toggleTodo(t.id)}
+                    aria-label={`Complete ${t.text}`}
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border"
+                    style={{
+                      borderColor: PRIORITY_DOT[t.priority],
+                      background: t.done ? PRIORITY_DOT[t.priority] : 'transparent',
+                    }}
+                  />
+                  <span
+                    className={`truncate ${
+                      t.done ? 'line-through text-[var(--color-ink-faint)]' : ''
+                    }`}
+                  >
+                    {t.text}
+                  </span>
+                </div>
+              ))}
+
             {allDayDraft?.date === key ? (
               <input
                 autoFocus
