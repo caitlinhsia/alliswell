@@ -1,17 +1,42 @@
-import { useMemo, useState } from 'react';
-import { addDays, format, startOfWeek } from 'date-fns';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
-import Panel from '../components/Panel';
-import ColorPicker from '../components/ColorPicker';
-import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
 import { NOTE_COLORS } from '../lib/colors';
-import type { NoteColor, Priority, ScheduleItem } from '../types';
+import type { NoteColor, ScheduleItem } from '../types';
 
-const PRIORITY_DOT: Record<Priority, string> = {
-  high: 'var(--color-note-rust)',
-  medium: 'var(--color-note-ochre)',
-  low: 'var(--color-note-sage)',
+const START_HOUR = 6;
+const END_HOUR = 24;
+const HOUR_H = 52; // px per hour
+const SNAP = 15; // minutes
+const DEFAULT_LEN = 60;
+
+const toMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+const toHHMM = (min: number) => {
+  const clamped = Math.max(0, Math.min(24 * 60 - 1, Math.round(min)));
+  return `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
+};
+const snap = (min: number) => Math.round(min / SNAP) * SNAP;
+const yOf = (min: number) => ((min - START_HOUR * 60) / 60) * HOUR_H;
+
+function lengthOf(item: ScheduleItem) {
+  if (!item.time) return DEFAULT_LEN;
+  const start = toMin(item.time);
+  const end = item.endTime ? toMin(item.endTime) : start + DEFAULT_LEN;
+  return Math.max(SNAP, end - start);
+}
+
+type Drag = {
+  id: string;
+  mode: 'move' | 'resize';
+  grabMin: number; // where in the event the pointer took hold
+  startMin: number;
+  len: number;
+  date: string;
+  moved: boolean;
 };
 
 export default function ScheduleContent() {
@@ -19,407 +44,462 @@ export default function ScheduleContent() {
   const subjects = useAppStore((s) => s.subjects);
   const addScheduleItem = useAppStore((s) => s.addScheduleItem);
   const updateScheduleItem = useAppStore((s) => s.updateScheduleItem);
-  const moveScheduleItem = useAppStore((s) => s.moveScheduleItem);
   const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
-  const todos = useAppStore((s) => s.todos);
-  const toggleTodo = useAppStore((s) => s.toggleTodo);
 
   const [weekOffset, setWeekOffset] = useState(0);
-  const [formOpen, setFormOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState(todayStr());
-  const [time, setTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [category, setCategory] = useState<'task' | 'event'>('task');
-  const [formSubjectId, setFormSubjectId] = useState('');
-
-  const [addingDate, setAddingDate] = useState<string | null>(null);
-  const [quickText, setQuickText] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
-  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [allDayDraft, setAllDayDraft] = useState<{ date: string; text: string } | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<Drag | null>(null);
 
   const weekStart = useMemo(
     () => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7),
     [weekOffset]
   );
-  const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
-  );
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const dayKeys = days.map((d) => format(d, 'yyyy-MM-dd'));
+  const today = todayStr();
 
-  function handleAdd(e: React.FormEvent) {
+  // open on the working day rather than at 6am
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_H;
+  }, []);
+
+  const timed = schedule.filter((s) => s.time && dayKeys.includes(s.date));
+  const allDay = schedule.filter((s) => !s.time && dayKeys.includes(s.date));
+
+  /** Which day column and minute the pointer is over. */
+  function pointToSlot(e: PointerEvent | React.PointerEvent) {
+    const grid = gridRef.current;
+    if (!grid) return null;
+    const r = grid.getBoundingClientRect();
+    const colW = r.width / 7;
+    const col = Math.max(0, Math.min(6, Math.floor((e.clientX - r.left) / colW)));
+    const min = START_HOUR * 60 + ((e.clientY - r.top) / HOUR_H) * 60;
+    return { date: dayKeys[col], min };
+  }
+
+  function beginDrag(e: React.PointerEvent, item: ScheduleItem, mode: 'move' | 'resize') {
     e.preventDefault();
-    if (!title.trim()) return;
-    addScheduleItem(title.trim(), date, time || undefined, category, {
-      endTime: endTime || undefined,
-      subjectId: formSubjectId || undefined,
+    e.stopPropagation();
+    const slot = pointToSlot(e);
+    if (!slot || !item.time) return;
+    const d: Drag = {
+      id: item.id,
+      mode,
+      grabMin: slot.min - toMin(item.time),
+      startMin: toMin(item.time),
+      len: lengthOf(item),
+      date: item.date,
+      moved: false,
+    };
+    dragRef.current = d;
+    setDrag(d);
+    setSelectedId(item.id);
+  }
+
+  // dragging is tracked on the window so the pointer can leave the grid
+  useEffect(() => {
+    if (!drag) return;
+
+    function onMove(e: PointerEvent) {
+      const d = dragRef.current;
+      const slot = pointToSlot(e);
+      if (!d || !slot) return;
+      const next: Drag =
+        d.mode === 'move'
+          ? {
+              ...d,
+              date: slot.date,
+              startMin: Math.max(
+                START_HOUR * 60,
+                Math.min(END_HOUR * 60 - d.len, snap(slot.min - d.grabMin))
+              ),
+              moved: true,
+            }
+          : {
+              ...d,
+              len: Math.max(SNAP, Math.min(END_HOUR * 60 - d.startMin, snap(slot.min - d.startMin))),
+              moved: true,
+            };
+      dragRef.current = next;
+      setDrag(next);
+    }
+
+    function onUp() {
+      const d = dragRef.current;
+      if (d?.moved) {
+        updateScheduleItem(d.id, {
+          date: d.date,
+          time: toHHMM(d.startMin),
+          endTime: toHHMM(d.startMin + d.len),
+        });
+      }
+      dragRef.current = null;
+      setDrag(null);
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag?.id, drag?.mode]);
+
+  /** Click an empty slot to drop an hour-long event there. */
+  function createAt(e: React.PointerEvent) {
+    if (drag) return;
+    const slot = pointToSlot(e);
+    if (!slot) return;
+    const start = snap(slot.min);
+    addScheduleItem('New event', slot.date, toHHMM(start), 'event', {
+      endTime: toHHMM(start + DEFAULT_LEN),
     });
-    setTitle('');
-    setTime('');
-    setEndTime('');
-    setFormOpen(false);
   }
 
-  function submitQuickAdd(dayStr: string) {
-    if (quickText.trim()) {
-      addScheduleItem(quickText.trim(), dayStr, undefined, 'task');
-    }
-    setQuickText('');
-    setAddingDate(null);
-  }
-
-  function startEdit(item: ScheduleItem) {
-    setEditingId(item.id);
-    setEditText(item.title);
-  }
-
-  function saveEdit(id: string) {
-    if (editText.trim()) {
-      updateScheduleItem(id, { title: editText.trim() });
-    }
-    setEditingId(null);
-  }
-
-  function itemAccent(item: ScheduleItem): string | undefined {
-    if (item.color) return NOTE_COLORS[item.color];
-    const subj = subjects.find((s) => s.id === item.subjectId);
-    return subj ? NOTE_COLORS[subj.color] : undefined;
-  }
+  const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
   return (
-    <>
-      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">
-        Drag anything to another day to reschedule it · click a task to rename
-      </p>
-
-      <div className="mb-4 shrink-0">
-        {formOpen ? (
-          <Panel>
-            <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">What</label>
-                <input
-                  autoFocus
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Yoga, essay draft, dentist"
-                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2 min-w-[200px] focus:outline-none focus:ring-1 focus:ring-[var(--color-ink-faint)]"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">Date</label>
-                <DateField value={date} onChange={(v) => setDate(v ?? todayStr())} allowClear={false} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">From</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">To</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">Subject</label>
-                <select
-                  value={formSubjectId}
-                  onChange={(e) => setFormSubjectId(e.target.value)}
-                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
-                >
-                  <option value="">none</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-note text-xs text-[var(--color-ink-soft)]">Type</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as 'task' | 'event')}
-                  className="font-note border border-[var(--color-paper-line)] rounded-sm px-3 py-2"
-                >
-                  <option value="task">Task</option>
-                  <option value="event">Event</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="font-note bg-[var(--color-ink)] text-[var(--color-paper)] px-4 py-2 rounded-sm hover:bg-[var(--color-accent)] transition-colors"
-              >
-                + Add
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormOpen(false)}
-                className="font-note text-sm text-[var(--color-ink-soft)] px-2 py-2 hover:text-[var(--color-ink)]"
-              >
-                cancel
-              </button>
-            </form>
-          </Panel>
-        ) : (
-          <button
-            onClick={() => setFormOpen(true)}
-            className="font-note text-sm px-3 py-1.5 rounded-sm border border-[var(--color-paper-line)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
-          >
-            + add with date, time, subject, or event type
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* week controls */}
+      <div className="shrink-0 flex items-center justify-between gap-4 mb-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setWeekOffset((w) => w - 1)} className="keycap" aria-label="Previous week">
+            ←
           </button>
-        )}
-      </div>
-
-      <div className="mb-3 shrink-0">
-        <p className="font-display text-2xl text-center mb-3">
-          {format(weekStart, 'MMM d')} – {format(addDays(weekStart, 6), 'MMM d')}
-        </p>
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => setWeekOffset((w) => w - 1)}
-            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
-          >
-            ← prev
+          <button onClick={() => setWeekOffset(0)} className="btn">
+            Today
           </button>
-          <button
-            onClick={() => setWeekOffset(0)}
-            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
-          >
-            today
-          </button>
-          <button
-            onClick={() => setWeekOffset((w) => w + 1)}
-            className="label px-2.5 py-1.5 rounded-sm border border-[var(--color-paper-line)] hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] transition-colors"
-          >
-            next →
+          <button onClick={() => setWeekOffset((w) => w + 1)} className="keycap" aria-label="Next week">
+            →
           </button>
         </div>
+        <span className="font-display text-base">
+          {format(weekStart, 'd MMM')} – {format(addDays(weekStart, 6), 'd MMM yyyy')}
+        </span>
+        <span className="label hidden md:inline">drag to move · drag the edge to lengthen</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto -mx-1 px-1 grid grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-3 content-start">
-        {days.map((day) => {
-          const dayStr = format(day, 'yyyy-MM-dd');
-          const items = schedule
-            .filter((i) => i.date === dayStr)
-            .sort((a, b) => (a.time ?? '99:99').localeCompare(b.time ?? '99:99'));
-          const dayTodos = todos.filter((t) => t.dueDate === dayStr);
-          const isToday = dayStr === todayStr();
-          const isAdding = addingDate === dayStr;
-          const isDropTarget = dragOverDate === dayStr;
+      {/* day headers */}
+      <div className="shrink-0 flex border-b border-[var(--color-paper-line)]">
+        <div className="w-12 shrink-0" />
+        {days.map((d, i) => {
+          const isToday = isSameDay(d, parseISO(today));
           return (
-            <div
-              key={dayStr}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOverDate(dayStr);
-              }}
-              onDragLeave={() => setDragOverDate((d) => (d === dayStr ? null : d))}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverDate(null);
-                const id = e.dataTransfer.getData('text/plain');
-                if (id) moveScheduleItem(id, dayStr);
-              }}
-              className={`rounded-sm border p-2.5 sm:p-3 min-h-[110px] sm:min-h-[160px] lg:min-h-[380px] flex flex-col transition-colors ${
-                isDropTarget
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40'
-                  : isToday
-                  ? 'border-[var(--color-ink-faint)] bg-[var(--color-paper)]'
-                  : 'border-[var(--color-paper-line)] bg-[var(--color-paper)]/70'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-note text-xs text-[var(--color-ink-soft)]">{format(day, 'EEE')}</p>
-                  <p className="font-display text-lg mb-2">{format(day, 'd')}</p>
-                </div>
-                {!isAdding && (
-                  <button
-                    onClick={() => {
-                      setAddingDate(dayStr);
-                      setQuickText('');
-                    }}
-                    aria-label={`Add to ${format(day, 'EEEE, MMM d')}`}
-                    className="w-7 h-7 -m-1 rounded-full border border-dashed border-[var(--color-ink-soft)]/50 text-[var(--color-ink-soft)]/70 hover:text-[var(--color-ink)] hover:border-[var(--color-ink)] hover:bg-[var(--color-paper-deep)] flex items-center justify-center text-sm leading-none transition-colors"
-                  >
-                    +
-                  </button>
-                )}
+            <div key={i} className="flex-1 min-w-0 px-1 pb-1.5 text-center">
+              <div className="label">{format(d, 'EEE')}</div>
+              <div
+                className={`font-display text-lg leading-tight ${
+                  isToday ? 'text-[var(--color-accent)]' : ''
+                }`}
+              >
+                {format(d, 'd')}
               </div>
-              <ul className="space-y-1.5 flex-1">
-                {items.map((item) => {
-                  const accent = itemAccent(item);
-                  const subj = subjects.find((s) => s.id === item.subjectId);
-                  const isExpanded = expandedId === item.id;
-                  return (
-                    <li
-                      key={item.id}
-                      draggable={editingId !== item.id}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('text/plain', item.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      className="rounded-sm border border-[var(--color-paper-line)] bg-[var(--color-paper)] px-1.5 py-1 cursor-grab active:cursor-grabbing"
-                      style={accent ? { borderLeft: `3px solid ${accent}` } : undefined}
-                    >
-                      <div className="flex items-start gap-1.5 font-note text-xs leading-snug">
-                        <input
-                          type="checkbox"
-                          checked={item.done}
-                          onChange={() => toggleScheduleItem(item.id)}
-                          className="mt-0.5 accent-[var(--color-note-denim)] w-4 h-4 shrink-0"
-                        />
-                        {editingId === item.id ? (
-                          <input
-                            autoFocus
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            onBlur={() => saveEdit(item.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit(item.id);
-                              if (e.key === 'Escape') setEditingId(null);
-                            }}
-                            className="flex-1 font-note bg-transparent border-b border-dashed border-[var(--color-ink-soft)] outline-none min-w-0"
-                          />
-                        ) : (
-                          <span
-                            onClick={() => startEdit(item)}
-                            className={`flex-1 cursor-text hover:underline decoration-dotted ${
-                              item.done ? 'line-through text-[var(--color-ink-soft)]' : ''
-                            }`}
-                          >
-                            {item.time && (
-                              <span className="text-[var(--color-ink-soft)]">
-                                {item.time}
-                                {item.endTime ? `–${item.endTime}` : ''}{' '}
-                              </span>
-                            )}
-                            {item.title}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                          aria-label="Item options"
-                          className="text-[var(--color-ink-soft)]/40 hover:text-[var(--color-ink)] shrink-0 px-1.5 -my-1 -mr-1 leading-none"
-                        >
-                          ⋯
-                        </button>
-                      </div>
-
-                      {subj && !isExpanded && (
-                        <p className="font-note text-[10px] text-[var(--color-ink-soft)] pl-[22px]">{subj.name}</p>
-                      )}
-
-                      {isExpanded && (
-                        <div className="pl-[22px] pt-1.5 pb-0.5 flex flex-col gap-1.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-note text-[10px] text-[var(--color-ink-soft)]">color</span>
-                            <ColorPicker
-                              size="sm"
-                              value={item.color ?? subj?.color ?? 'denim'}
-                              onChange={(c: NoteColor) => updateScheduleItem(item.id, { color: c })}
-                            />
-                          </div>
-                          <select
-                            value={item.subjectId ?? ''}
-                            onChange={(e) =>
-                              updateScheduleItem(item.id, { subjectId: e.target.value || undefined })
-                            }
-                            className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1.5 py-0.5 bg-[var(--color-paper)]"
-                          >
-                            <option value="">no subject</option>
-                            {subjects.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="time"
-                              value={item.time ?? ''}
-                              onChange={(e) => updateScheduleItem(item.id, { time: e.target.value || undefined })}
-                              className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1 py-0.5 bg-[var(--color-paper)] min-w-0 flex-1"
-                            />
-                            <span className="text-[10px] text-[var(--color-ink-soft)]">–</span>
-                            <input
-                              type="time"
-                              value={item.endTime ?? ''}
-                              onChange={(e) =>
-                                updateScheduleItem(item.id, { endTime: e.target.value || undefined })
-                              }
-                              className="font-note text-[11px] border border-[var(--color-paper-line)] rounded px-1 py-0.5 bg-[var(--color-paper)] min-w-0 flex-1"
-                            />
-                          </div>
-                          <button
-                            onClick={() => {
-                              removeScheduleItem(item.id);
-                              setExpandedId(null);
-                            }}
-                            className="font-note text-[11px] text-[var(--color-ink-soft)] hover:text-red-600 self-start"
-                          >
-                            delete
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-                {dayTodos.map((t) => (
-                  <li key={t.id} className="flex items-start gap-1.5 font-note text-xs leading-snug px-1.5">
-                    <input
-                      type="checkbox"
-                      checked={t.done}
-                      onChange={() => toggleTodo(t.id)}
-                      className="mt-0.5 accent-[var(--color-note-denim)] w-4 h-4 shrink-0"
-                    />
-                    <span
-                      className="mt-1 w-2 h-2 rounded-full shrink-0"
-                      style={{ background: PRIORITY_DOT[t.priority] }}
-                      title={`${t.priority} priority to-do`}
-                    />
-                    <span className={`flex-1 ${t.done ? 'line-through text-[var(--color-ink-soft)]' : ''}`}>
-                      {t.text}
-                    </span>
-                  </li>
-                ))}
-                {isAdding && (
-                  <li className="flex items-center gap-1.5 font-note text-xs">
-                    <span className="w-4 h-4 shrink-0" />
-                    <input
-                      autoFocus
-                      value={quickText}
-                      onChange={(e) => setQuickText(e.target.value)}
-                      onBlur={() => submitQuickAdd(dayStr)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') submitQuickAdd(dayStr);
-                        if (e.key === 'Escape') {
-                          setQuickText('');
-                          setAddingDate(null);
-                        }
-                      }}
-                      placeholder="new task..."
-                      className="flex-1 font-note bg-transparent border-b border-dashed border-[var(--color-ink-soft)] outline-none min-w-0"
-                    />
-                  </li>
-                )}
-              </ul>
             </div>
           );
         })}
       </div>
-    </>
+
+      {/* all-day strip */}
+      <div className="shrink-0 flex border-b border-[var(--color-paper-line)] min-h-[34px]">
+        <div className="w-12 shrink-0 label pt-1.5 pr-1 text-right">all day</div>
+        {dayKeys.map((key) => (
+          <div key={key} className="flex-1 min-w-0 border-l border-[var(--color-paper-line)]/60 p-1 space-y-1">
+            {allDay
+              .filter((s) => s.date === key)
+              .map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => toggleScheduleItem(s.id)}
+                  onDoubleClick={() => removeScheduleItem(s.id)}
+                  title="Click to tick off · double-click to delete"
+                  className={`block w-full text-left truncate text-[0.72rem] px-1.5 py-0.5 rounded-sm ${
+                    s.done ? 'line-through text-[var(--color-ink-faint)]' : ''
+                  }`}
+                  style={{
+                    background: `color-mix(in srgb, ${colourOf(s, subjects)} 20%, transparent)`,
+                  }}
+                >
+                  {s.title}
+                </button>
+              ))}
+            {allDayDraft?.date === key ? (
+              <input
+                autoFocus
+                value={allDayDraft.text}
+                onChange={(e) => setAllDayDraft({ date: key, text: e.target.value })}
+                onBlur={() => {
+                  if (allDayDraft.text.trim())
+                    addScheduleItem(allDayDraft.text.trim(), key, undefined, 'task');
+                  setAllDayDraft(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                  if (e.key === 'Escape') setAllDayDraft(null);
+                }}
+                className="w-full bg-transparent text-[0.72rem] outline-none border-b border-[var(--color-accent)]"
+              />
+            ) : (
+              <button
+                onClick={() => setAllDayDraft({ date: key, text: '' })}
+                className="w-full text-left text-[0.7rem] text-[var(--color-ink-faint)] opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
+              >
+                + task
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* the hour grid */}
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex" style={{ height: (END_HOUR - START_HOUR) * HOUR_H }}>
+          <div className="w-12 shrink-0 relative">
+            {hours.map((h) => (
+              <div
+                key={h}
+                className="absolute right-1 label -translate-y-1/2"
+                style={{ top: yOf(h * 60) }}
+              >
+                {h === 24 ? '' : `${String(h).padStart(2, '0')}`}
+              </div>
+            ))}
+          </div>
+
+          <div
+            ref={gridRef}
+            onPointerDown={createAt}
+            className="relative flex-1 min-w-0 cursor-crosshair"
+          >
+            {/* hour lines */}
+            {hours.map((h) => (
+              <div
+                key={h}
+                className="absolute left-0 right-0 border-t border-[var(--color-paper-line)]/70"
+                style={{ top: yOf(h * 60) }}
+              />
+            ))}
+            {/* day dividers */}
+            {dayKeys.map((key, i) => (
+              <div
+                key={key}
+                className="absolute top-0 bottom-0 border-l border-[var(--color-paper-line)]/60"
+                style={{ left: `${(i / 7) * 100}%`, width: `${100 / 7}%` }}
+              >
+                {key === today && (
+                  <div className="absolute inset-0 bg-[var(--color-accent)]/[0.035] pointer-events-none" />
+                )}
+              </div>
+            ))}
+            <NowLine dayKeys={dayKeys} today={today} />
+
+            {timed.map((item) => {
+              const live = drag?.id === item.id ? drag : null;
+              const date = live?.date ?? item.date;
+              const startMin = live?.startMin ?? toMin(item.time!);
+              const len = live?.len ?? lengthOf(item);
+              const col = dayKeys.indexOf(date);
+              if (col === -1) return null;
+              const colour = colourOf(item, subjects);
+              return (
+                <Event
+                  key={item.id}
+                  item={item}
+                  colour={colour}
+                  col={col}
+                  top={yOf(startMin)}
+                  height={(len / 60) * HOUR_H}
+                  startMin={startMin}
+                  len={len}
+                  dragging={!!live}
+                  selected={selectedId === item.id}
+                  onSelect={() => setSelectedId(item.id)}
+                  onGrab={(e, mode) => beginDrag(e, item, mode)}
+                  onRename={(title) => updateScheduleItem(item.id, { title })}
+                  onRemove={() => removeScheduleItem(item.id)}
+                  onColour={(c) => updateScheduleItem(item.id, { color: c })}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function colourOf(item: ScheduleItem, subjects: { id: string; color: NoteColor }[]) {
+  if (item.color) return NOTE_COLORS[item.color];
+  const subject = subjects.find((s) => s.id === item.subjectId);
+  if (subject) return NOTE_COLORS[subject.color];
+  return 'var(--color-accent)';
+}
+
+/** The current-time hairline, as in a calendar app. */
+function NowLine({ dayKeys, today }: { dayKeys: string[]; today: string }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+  const col = dayKeys.indexOf(today);
+  if (col === -1) return null;
+  const min = now.getHours() * 60 + now.getMinutes();
+  if (min < START_HOUR * 60) return null;
+  return (
+    <div
+      className="absolute z-20 pointer-events-none flex items-center"
+      style={{ top: yOf(min), left: `${(col / 7) * 100}%`, width: `${100 / 7}%` }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] -ml-[3px]" />
+      <span className="flex-1 h-px bg-[var(--color-accent)]" />
+    </div>
+  );
+}
+
+function Event({
+  item,
+  colour,
+  col,
+  top,
+  height,
+  startMin,
+  len,
+  dragging,
+  selected,
+  onSelect,
+  onGrab,
+  onRename,
+  onRemove,
+  onColour,
+}: {
+  item: ScheduleItem;
+  colour: string;
+  col: number;
+  top: number;
+  height: number;
+  startMin: number;
+  len: number;
+  dragging: boolean;
+  selected: boolean;
+  onSelect: () => void;
+  onGrab: (e: React.PointerEvent, mode: 'move' | 'resize') => void;
+  onRename: (title: string) => void;
+  onRemove: () => void;
+  onColour: (c: NoteColor) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const short = height < 34;
+
+  return (
+    <div
+      className="absolute px-[3px] touch-none"
+      style={{
+        left: `${(col / 7) * 100}%`,
+        width: `${100 / 7}%`,
+        top,
+        height,
+        zIndex: dragging ? 60 : selected ? 40 : 10,
+      }}
+    >
+      <div
+        onPointerDown={(e) => !editing && onGrab(e, 'move')}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+        onDoubleClick={() => setEditing(true)}
+        className={`group relative h-full rounded-sm overflow-hidden text-left transition-shadow ${
+          dragging ? 'shadow-lg cursor-grabbing' : 'cursor-grab'
+        }`}
+        style={{
+          background: `color-mix(in srgb, ${colour} 22%, var(--color-paper))`,
+          borderLeft: `3px solid ${colour}`,
+          boxShadow: selected ? `0 0 0 1px ${colour}` : undefined,
+        }}
+      >
+        <div className={`px-1.5 ${short ? 'py-0' : 'py-1'} leading-tight`}>
+          {editing ? (
+            <input
+              autoFocus
+              defaultValue={item.title}
+              onBlur={(e) => {
+                onRename(e.target.value.trim() || item.title);
+                setEditing(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+                if (e.key === 'Escape') setEditing(false);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="w-full bg-transparent text-[0.74rem] outline-none border-b border-[var(--color-ink-soft)]"
+            />
+          ) : (
+            <p className="text-[0.74rem] truncate">{item.title}</p>
+          )}
+          {!short && (
+            <p className="font-mono-num text-[0.62rem] text-[var(--color-ink-soft)]">
+              {toHHMM(startMin)}–{toHHMM(startMin + len)}
+            </p>
+          )}
+        </div>
+
+        {selected && (
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="absolute top-0 right-0 px-1.5 text-[0.7rem] text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+            aria-label="Delete event"
+          >
+            ×
+          </button>
+        )}
+
+        {/* drag the bottom edge to lengthen */}
+        <span
+          onPointerDown={(e) => onGrab(e, 'resize')}
+          className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize"
+        >
+          <span className="block mx-auto w-6 h-[2px] rounded-full bg-[var(--color-ink-soft)]/0 group-hover:bg-[var(--color-ink-soft)]/40 mt-1 transition-colors" />
+        </span>
+      </div>
+      {selected && !editing && (
+        <ColourStrip onPick={onColour} />
+      )}
+    </div>
+  );
+}
+
+const QUICK_COLOURS: NoteColor[] = ['clay', 'denim', 'sage', 'ochre', 'lilac', 'teal'];
+
+function ColourStrip({ onPick }: { onPick: (c: NoteColor) => void }) {
+  return (
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute left-0 right-0 -bottom-6 z-50 flex justify-center gap-1 px-1"
+    >
+      {QUICK_COLOURS.map((c) => (
+        <button
+          key={c}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPick(c);
+          }}
+          title={c}
+          className="w-3.5 h-3.5 rounded-full border border-[var(--color-paper)] shadow-sm"
+          style={{ background: NOTE_COLORS[c] }}
+        />
+      ))}
+    </div>
   );
 }
