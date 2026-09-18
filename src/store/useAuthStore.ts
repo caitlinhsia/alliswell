@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
-import { supabase, isCloudEnabled } from '../lib/supabase';
+import { supabase, isCloudEnabled, entryHash } from '../lib/supabase';
 import {
   applyState,
   fingerprint,
@@ -73,19 +73,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (started || !supabase) return;
     started = true;
 
-    // A reset link that failed comes back as an error in the URL fragment
-    // rather than a session, so read it before Supabase clears the hash.
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const hashError = hash.get('error_code') ?? hash.get('error');
+    // How we arrived, read from the snapshot taken before the client cleared it.
+    const hashError = entryHash.get('error_code') ?? entryHash.get('error');
     if (hashError) {
       set({
         error:
           hashError === 'otp_expired'
             ? 'That reset link has already been used or has expired. Ask for a new one.'
-            : hash.get('error_description')?.replace(/\+/g, ' ') ?? 'That link did not work.',
+            : entryHash.get('error_description')?.replace(/\+/g, ' ') ??
+              'That link did not work. Ask for a new one.',
       });
       window.history.replaceState(null, '', window.location.pathname);
     }
+
+    // Arriving with a recovery token means "set a new password", whether or not
+    // the PASSWORD_RECOVERY event lands before this runs.
+    if (entryHash.get('type') === 'recovery') set({ recovering: true, error: null });
 
     supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, ready: true });
