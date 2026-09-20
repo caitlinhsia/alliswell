@@ -7,6 +7,7 @@ import StickyLayer from '../components/StickyLayer';
 import Icon, { type IconName } from '../components/Icon';
 import AccountMenu from '../components/AccountMenu';
 import TodayPanel from '../components/TodayPanel';
+import SearchPalette from '../components/SearchPalette';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -117,6 +118,20 @@ export default function Notebook() {
   const setHomeViewMode = useAppStore((s) => s.setHomeViewMode);
   const [flipIndex, setFlipIndex] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const setActiveNote = useAppStore((s) => s.setActiveNote);
+
+  // cmd/ctrl-K from anywhere, the way every search box works
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   function goToPage(key: DeskPageKey) {
     const idx = FLIP_ORDER.indexOf(key);
@@ -174,6 +189,25 @@ export default function Notebook() {
               Desk
             </button>
           </nav>
+          <button
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search the notebook"
+            title="Search (⌘K)"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] hover:bg-[var(--color-paper-deep)] transition-colors"
+          >
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden>
+              <circle cx="8.8" cy="8.8" r="5.2" stroke="currentColor" strokeWidth="1.4" />
+              <line
+                x1="12.7"
+                y1="12.7"
+                x2="16.4"
+                y2="16.4"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
           <ThemeToggle />
           <AccountMenu />
         </div>
@@ -188,6 +222,15 @@ export default function Notebook() {
         </div>
       )}
       </div>
+
+      <SearchPalette
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onGo={(page, hit) => {
+          if (hit.noteId) setActiveNote(hit.noteId);
+          goToPage(page);
+        }}
+      />
     </div>
   );
 }

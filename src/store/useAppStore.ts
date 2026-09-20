@@ -39,7 +39,7 @@ export interface PendingUndo {
   at: number;
 }
 
-interface AppState {
+export interface AppState {
   pendingUndo: PendingUndo | null;
   undoDelete: () => void;
   clearUndo: () => void;
