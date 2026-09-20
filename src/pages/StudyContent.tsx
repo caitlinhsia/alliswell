@@ -12,11 +12,12 @@ export default function StudyContent() {
   const addSubject = useAppStore((s) => s.addSubject);
   const updateSubject = useAppStore((s) => s.updateSubject);
   const removeSubject = useAppStore((s) => s.removeSubject);
-  const studyTodos = useAppStore((s) => s.studyTodos);
-  const addStudyTodo = useAppStore((s) => s.addStudyTodo);
-  const updateStudyTodo = useAppStore((s) => s.updateStudyTodo);
-  const toggleStudyTodo = useAppStore((s) => s.toggleStudyTodo);
-  const removeStudyTodo = useAppStore((s) => s.removeStudyTodo);
+  // the same to-do list the To-Do page shows, narrowed to this subject
+  const todos = useAppStore((s) => s.todos);
+  const addTodo = useAppStore((s) => s.addTodo);
+  const updateTodo = useAppStore((s) => s.updateTodo);
+  const toggleTodo = useAppStore((s) => s.toggleTodo);
+  const removeTodo = useAppStore((s) => s.removeTodo);
   const studySessions = useAppStore((s) => s.studySessions);
   const logStudySession = useAppStore((s) => s.logStudySession);
 
@@ -85,7 +86,8 @@ export default function StudyContent() {
     .filter((s) => s.date === todayStr())
     .reduce((sum, s) => sum + s.minutes, 0);
 
-  const subjectTodos = studyTodos.filter((t) => t.subjectId === activeSubjectId);
+  const subjectTodos = todos.filter((t) => t.subjectId === activeSubjectId && !t.done);
+  const subjectDone = todos.filter((t) => t.subjectId === activeSubjectId && t.done);
   const recentSessions = [...studySessions].sort((a, b) => b.completedAt - a.completedAt).slice(0, 8);
 
   return (
@@ -277,7 +279,7 @@ export default function StudyContent() {
             onSubmit={(e) => {
               e.preventDefault();
               if (!newTodo.trim() || !activeSubjectId) return;
-              addStudyTodo(activeSubjectId, newTodo.trim());
+              addTodo(newTodo.trim(), 'medium', undefined, activeSubjectId);
               setNewTodo('');
             }}
             className="flex gap-2 mb-2"
@@ -297,13 +299,18 @@ export default function StudyContent() {
               Add
             </button>
           </form>
+          {subjectTodos.length === 0 && subjectDone.length === 0 && activeSubjectId && (
+            <p className="font-note text-sm text-[var(--color-ink-soft)]">
+              Nothing for this subject yet. Anything added here shows up on the To-Do page too.
+            </p>
+          )}
           <ul className="space-y-1">
             {subjectTodos.map((t) => (
               <li key={t.id} className="flex items-center gap-2 font-note text-sm">
                 <input
                   type="checkbox"
                   checked={t.done}
-                  onChange={() => toggleStudyTodo(t.id)}
+                  onChange={() => toggleTodo(t.id)}
                   className="accent-[var(--color-accent)]"
                 />
                 {editingTodoId === t.id ? (
@@ -312,12 +319,12 @@ export default function StudyContent() {
                     value={editTodoText}
                     onChange={(e) => setEditTodoText(e.target.value)}
                     onBlur={() => {
-                      if (editTodoText.trim()) updateStudyTodo(t.id, editTodoText.trim());
+                      if (editTodoText.trim()) updateTodo(t.id, { text: editTodoText.trim() });
                       setEditingTodoId(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        if (editTodoText.trim()) updateStudyTodo(t.id, editTodoText.trim());
+                        if (editTodoText.trim()) updateTodo(t.id, { text: editTodoText.trim() });
                         setEditingTodoId(null);
                       }
                       if (e.key === 'Escape') setEditingTodoId(null);
@@ -338,7 +345,7 @@ export default function StudyContent() {
                   </span>
                 )}
                 <button
-                  onClick={() => removeStudyTodo(t.id)}
+                  onClick={() => removeTodo(t.id)}
                   className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
                 >
                   ×
@@ -346,6 +353,28 @@ export default function StudyContent() {
               </li>
             ))}
           </ul>
+          {subjectDone.length > 0 && (
+            <details className="mt-3">
+              <summary className="label cursor-pointer hover:text-[var(--color-ink)]">
+                done · {subjectDone.length}
+              </summary>
+              <ul className="space-y-1 mt-1.5">
+                {subjectDone.map((t) => (
+                  <li key={t.id} className="flex items-center gap-2 font-note text-sm">
+                    <input
+                      type="checkbox"
+                      checked
+                      onChange={() => toggleTodo(t.id)}
+                      className="accent-[var(--color-accent)]"
+                    />
+                    <span className="line-through text-[var(--color-ink-soft)] truncate">
+                      {t.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </Panel>
       </div>
 

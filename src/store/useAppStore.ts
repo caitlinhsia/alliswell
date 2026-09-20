@@ -11,7 +11,6 @@ import type {
   StickyNote,
   StickyPage,
   StudySession,
-  StudyTodo,
   Subject,
   TodoItem,
 } from '../types';
@@ -29,8 +28,7 @@ type UndoSnapshot =
   | { kind: 'schedule'; item: ScheduleItem }
   | { kind: 'todo'; item: TodoItem }
   | { kind: 'note'; item: Note }
-  | { kind: 'subject'; item: Subject; todos: StudyTodo[]; sessions: StudySession[] }
-  | { kind: 'studyTodo'; item: StudyTodo }
+  | { kind: 'subject'; item: Subject; todos: TodoItem[]; sessions: StudySession[] }
   | { kind: 'sticky'; item: StickyNote }
   | { kind: 'mindMap'; items: MindMapNode[] }
   | { kind: 'journal'; item: JournalEntry };
@@ -104,11 +102,6 @@ interface AppState {
   updateSubject: (id: string, patch: Partial<Pick<Subject, 'name' | 'color'>>) => void;
   removeSubject: (id: string) => void;
 
-  studyTodos: StudyTodo[];
-  addStudyTodo: (subjectId: string, text: string) => void;
-  updateStudyTodo: (id: string, text: string) => void;
-  toggleStudyTodo: (id: string) => void;
-  removeStudyTodo: (id: string) => void;
 
   studySessions: StudySession[];
   logStudySession: (subjectId: string, minutes: number) => void;
@@ -161,12 +154,10 @@ export const useAppStore = create<AppState>()(
             case 'subject':
               return {
                 subjects: [...state.subjects, s.item],
-                studyTodos: [...state.studyTodos, ...s.todos],
+                todos: [...state.todos, ...s.todos],
                 studySessions: [...state.studySessions, ...s.sessions],
                 pendingUndo: null,
               };
-            case 'studyTodo':
-              return { studyTodos: [...state.studyTodos, s.item], pendingUndo: null };
             case 'sticky':
               return { stickyNotes: [...state.stickyNotes, s.item], pendingUndo: null };
             case 'mindMap':
@@ -328,11 +319,12 @@ export const useAppStore = create<AppState>()(
       removeSubject: (id) =>
         set((s) => {
           const item = s.subjects.find((sub) => sub.id === id);
-          const todos = s.studyTodos.filter((t) => t.subjectId === id);
+          const todos = s.todos.filter((t) => t.subjectId === id);
           const sessions = s.studySessions.filter((sess) => sess.subjectId === id);
           return {
             subjects: s.subjects.filter((sub) => sub.id !== id),
-            studyTodos: s.studyTodos.filter((t) => t.subjectId !== id),
+            // the work itself survives; it just stops belonging to a subject
+            todos: s.todos.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)),
             studySessions: s.studySessions.filter((sess) => sess.subjectId !== id),
             pendingUndo: item
               ? {
@@ -340,30 +332,6 @@ export const useAppStore = create<AppState>()(
                   label: `Deleted subject "${item.name}"`,
                   at: Date.now(),
                 }
-              : s.pendingUndo,
-          };
-        }),
-
-      studyTodos: [],
-      addStudyTodo: (subjectId, text) =>
-        set((s) => ({
-          studyTodos: [...s.studyTodos, { id: uid(), subjectId, text, done: false }],
-        })),
-      updateStudyTodo: (id, text) =>
-        set((s) => ({
-          studyTodos: s.studyTodos.map((t) => (t.id === id ? { ...t, text } : t)),
-        })),
-      toggleStudyTodo: (id) =>
-        set((s) => ({
-          studyTodos: s.studyTodos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
-        })),
-      removeStudyTodo: (id) =>
-        set((s) => {
-          const item = s.studyTodos.find((t) => t.id === id);
-          return {
-            studyTodos: s.studyTodos.filter((t) => t.id !== id),
-            pendingUndo: item
-              ? { snapshot: { kind: 'studyTodo', item }, label: `Deleted "${item.text}"`, at: Date.now() }
               : s.pendingUndo,
           };
         }),
@@ -534,10 +502,29 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'alliswell-storage',
-      version: 2,
+      version: 3,
       partialize: ({ pendingUndo: _pendingUndo, ...rest }) => rest,
       // v0 kept board notes and write-page notes in two arrays and used pastel color names
       migrate: (persisted, version) => {
+        // study to-dos were a second, parallel to-do list; fold them into the
+        // real one, keeping their subject so nothing about them is lost
+        const asV3 = (state: Record<string, unknown>) => {
+          const legacy = state.studyTodos as
+            | { id: string; subjectId: string; text: string; done: boolean }[]
+            | undefined;
+          if (!legacy?.length) return { ...state, studyTodos: undefined };
+          const existing = (state.todos as TodoItem[] | undefined) ?? [];
+          const moved: TodoItem[] = legacy.map((t, i) => ({
+            id: t.id,
+            text: t.text,
+            priority: 'medium' as Priority,
+            subjectId: t.subjectId,
+            done: t.done,
+            createdAt: Date.now() + i,
+          }));
+          return { ...state, todos: [...existing, ...moved], studyTodos: undefined };
+        };
+
         const asV2 = (state: Record<string, unknown>) => {
           if (Array.isArray(state.notes)) return state;
           const html = typeof state.writeNoteHtml === 'string' ? state.writeNoteHtml : '';
@@ -549,8 +536,10 @@ export const useAppStore = create<AppState>()(
           return { ...state, notes, activeNoteId: notes[0]?.id ?? null };
         };
 
-        if (version >= 2) return persisted as AppState;
-        if (version === 1) return asV2(persisted as Record<string, unknown>) as unknown as AppState;
+        if (version >= 3) return persisted as AppState;
+        if (version === 2) return asV3(persisted as Record<string, unknown>) as unknown as AppState;
+        if (version === 1)
+          return asV3(asV2(persisted as Record<string, unknown>)) as unknown as AppState;
         const old = persisted as Record<string, unknown>;
         const legacyColor: Record<string, NoteColor> = {
           yellow: 'ochre',
@@ -571,7 +560,7 @@ export const useAppStore = create<AppState>()(
           color: fix(n.color),
           page: 'write' as StickyPage,
         }));
-        return asV2({
+        return asV3(asV2({
           ...old,
           stickyNotes: [...board, ...write],
           writeStickyNotes: undefined,
@@ -580,7 +569,7 @@ export const useAppStore = create<AppState>()(
             ...n,
             color: fix(n.color),
           })),
-        }) as unknown as AppState;
+        })) as unknown as AppState;
       },
     }
   )
