@@ -6,6 +6,7 @@ import NotepadPage from '../components/NotepadPage';
 import StickyLayer from '../components/StickyLayer';
 import Icon, { type IconName } from '../components/Icon';
 import AccountMenu from '../components/AccountMenu';
+import TodayPanel from '../components/TodayPanel';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -694,6 +695,8 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
       </div>
 
       <div className="mt-8 h-px bg-[var(--color-paper-line)]" />
+
+      <TodayPanel />
 
       {/* widgets */}
       {frontPageWidgets.length > 0 && (
