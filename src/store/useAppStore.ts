@@ -85,6 +85,11 @@ interface AppState {
   ) => void;
   moveScheduleItem: (id: string, date: string) => void;
   toggleScheduleItem: (id: string) => void;
+  /** Tick one appearance of a repeating item without touching the rest. */
+  toggleOccurrence: (id: string, date: string) => void;
+  /** Drop a single appearance, leaving the series running. */
+  skipOccurrence: (id: string, date: string) => void;
+  setScheduleRepeat: (id: string, repeat: ScheduleItem['repeat']) => void;
   removeScheduleItem: (id: string) => void;
 
   todos: TodoItem[];
@@ -261,6 +266,36 @@ export const useAppStore = create<AppState>()(
       moveScheduleItem: (id, date) =>
         set((s) => ({
           schedule: s.schedule.map((i) => (i.id === id ? { ...i, date } : i)),
+        })),
+      toggleOccurrence: (id, date) =>
+        set((s) => ({
+          schedule: s.schedule.map((item) => {
+            if (item.id !== id) return item;
+            if (!item.repeat) return { ...item, done: !item.done };
+            const done = item.doneDates ?? [];
+            return {
+              ...item,
+              doneDates: done.includes(date)
+                ? done.filter((d) => d !== date)
+                : [...done, date],
+            };
+          }),
+        })),
+      skipOccurrence: (id, date) =>
+        set((s) => ({
+          schedule: s.schedule.map((item) =>
+            item.id === id
+              ? { ...item, skipDates: [...(item.skipDates ?? []), date] }
+              : item
+          ),
+        })),
+      setScheduleRepeat: (id, repeat) =>
+        set((s) => ({
+          schedule: s.schedule.map((item) =>
+            item.id === id
+              ? { ...item, repeat, ...(repeat ? {} : { doneDates: undefined, skipDates: undefined }) }
+              : item
+          ),
         })),
       toggleScheduleItem: (id) =>
         set((s) => ({

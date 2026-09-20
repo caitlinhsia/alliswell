@@ -3,7 +3,8 @@ import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import { todayStr } from '../lib/date';
 import { NOTE_COLORS } from '../lib/colors';
-import type { NoteColor, Priority, ScheduleItem } from '../types';
+import type { NoteColor, Priority, Repeat, ScheduleItem } from '../types';
+import { expandSchedule, REPEAT_LABEL } from '../lib/recurrence';
 
 const PRIORITY_DOT: Record<Priority, string> = {
   high: 'var(--color-note-rust)',
@@ -50,7 +51,9 @@ export default function ScheduleContent() {
   const subjects = useAppStore((s) => s.subjects);
   const addScheduleItem = useAppStore((s) => s.addScheduleItem);
   const updateScheduleItem = useAppStore((s) => s.updateScheduleItem);
-  const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
+  const toggleOccurrence = useAppStore((s) => s.toggleOccurrence);
+  const skipOccurrence = useAppStore((s) => s.skipOccurrence);
+  const setScheduleRepeat = useAppStore((s) => s.setScheduleRepeat);
   const removeScheduleItem = useAppStore((s) => s.removeScheduleItem);
   const todos = useAppStore((s) => s.todos);
   const toggleTodo = useAppStore((s) => s.toggleTodo);
@@ -78,8 +81,9 @@ export default function ScheduleContent() {
     if (scrollRef.current) scrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_H;
   }, []);
 
-  const timed = schedule.filter((s) => s.time && dayKeys.includes(s.date));
-  const allDay = schedule.filter((s) => !s.time && dayKeys.includes(s.date));
+  const occurrences = expandSchedule(schedule, dayKeys);
+  const timed = occurrences.filter((o) => o.item.time);
+  const allDay = occurrences.filter((o) => !o.item.time);
   // a to-do with a due date is a thing happening on a day; it belongs here too
   const dueTodos = todos.filter((t) => t.dueDate && dayKeys.includes(t.dueDate));
 
@@ -94,11 +98,17 @@ export default function ScheduleContent() {
     return { date: dayKeys[col], min };
   }
 
-  function beginDrag(e: React.PointerEvent, item: ScheduleItem, mode: 'move' | 'resize') {
+  function beginDrag(
+    e: React.PointerEvent,
+    item: ScheduleItem,
+    mode: 'move' | 'resize',
+    occurrenceDate: string
+  ) {
     e.preventDefault();
     e.stopPropagation();
     const slot = pointToSlot(e);
     if (!slot || !item.time) return;
+    void occurrenceDate;
     const d: Drag = {
       id: item.id,
       mode,
@@ -241,21 +251,28 @@ export default function ScheduleContent() {
             }`}
           >
             {allDay
-              .filter((s) => s.date === key)
-              .map((s) => (
+              .filter((o) => o.date === key)
+              .map((o) => (
                 <button
-                  key={s.id}
-                  onClick={() => toggleScheduleItem(s.id)}
-                  onDoubleClick={() => removeScheduleItem(s.id)}
-                  title="Click to tick off · double-click to delete"
+                  key={`${o.item.id}@${o.date}`}
+                  onClick={() => toggleOccurrence(o.item.id, o.date)}
+                  onDoubleClick={() =>
+                    o.repeating ? skipOccurrence(o.item.id, o.date) : removeScheduleItem(o.item.id)
+                  }
+                  title={
+                    o.repeating
+                      ? `Repeats ${REPEAT_LABEL[o.item.repeat!]} · click to tick · double-click to skip this one`
+                      : 'Click to tick off · double-click to delete'
+                  }
                   className={`block w-full text-left truncate text-[0.72rem] px-1.5 py-0.5 rounded-sm ${
-                    s.done ? 'line-through text-[var(--color-ink-faint)]' : ''
+                    o.done ? 'line-through text-[var(--color-ink-faint)]' : ''
                   }`}
                   style={{
-                    background: `color-mix(in srgb, ${colourOf(s, subjects)} 20%, transparent)`,
+                    background: `color-mix(in srgb, ${colourOf(o.item, subjects)} 20%, transparent)`,
                   }}
                 >
-                  {s.title}
+                  {o.repeating && <span className="opacity-50 mr-0.5">↻</span>}
+                  {o.item.title}
                 </button>
               ))}
             {dueTodos
@@ -357,9 +374,10 @@ export default function ScheduleContent() {
             ))}
             <NowLine dayKeys={dayKeys} today={today} />
 
-            {timed.map((item) => {
-              const live = drag?.id === item.id ? drag : null;
-              const date = live?.date ?? item.date;
+            {timed.map((o) => {
+              const item = o.item;
+              const live = drag?.id === item.id && drag.date === o.date ? drag : null;
+              const date = live?.date ?? o.date;
               const startMin = live?.startMin ?? toMin(item.time!);
               const len = live?.len ?? lengthOf(item);
               const col = dayKeys.indexOf(date);
@@ -367,8 +385,11 @@ export default function ScheduleContent() {
               const colour = colourOf(item, subjects);
               return (
                 <Event
-                  key={item.id}
+                  key={`${item.id}@${o.date}`}
                   item={item}
+                  occurrenceDate={o.date}
+                  repeating={o.repeating}
+                  done={o.done}
                   colour={colour}
                   col={col}
                   top={yOf(startMin)}
@@ -378,10 +399,15 @@ export default function ScheduleContent() {
                   dragging={!!live}
                   selected={selectedId === item.id}
                   onSelect={() => setSelectedId(item.id)}
-                  onGrab={(e, mode) => beginDrag(e, item, mode)}
+                  onGrab={(e, mode) => beginDrag(e, item, mode, o.date)}
                   onRename={(title) => updateScheduleItem(item.id, { title })}
-                  onRemove={() => removeScheduleItem(item.id)}
+                  onRemove={() =>
+                    o.repeating ? skipOccurrence(item.id, o.date) : removeScheduleItem(item.id)
+                  }
+                  onRemoveSeries={() => removeScheduleItem(item.id)}
                   onColour={(c) => updateScheduleItem(item.id, { color: c })}
+                  onToggle={() => toggleOccurrence(item.id, o.date)}
+                  onRepeat={(r) => setScheduleRepeat(item.id, r)}
                 />
               );
             })}
@@ -423,6 +449,9 @@ function NowLine({ dayKeys, today }: { dayKeys: string[]; today: string }) {
 
 function Event({
   item,
+  occurrenceDate,
+  repeating,
+  done,
   colour,
   col,
   top,
@@ -435,9 +464,15 @@ function Event({
   onGrab,
   onRename,
   onRemove,
+  onRemoveSeries,
   onColour,
+  onToggle,
+  onRepeat,
 }: {
   item: ScheduleItem;
+  occurrenceDate: string;
+  repeating: boolean;
+  done: boolean;
   colour: string;
   col: number;
   top: number;
@@ -450,7 +485,10 @@ function Event({
   onGrab: (e: React.PointerEvent, mode: 'move' | 'resize') => void;
   onRename: (title: string) => void;
   onRemove: () => void;
+  onRemoveSeries: () => void;
   onColour: (c: NoteColor) => void;
+  onToggle: () => void;
+  onRepeat: (r: Repeat | undefined) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const short = height < 34;
@@ -499,7 +537,10 @@ function Event({
               className="w-full bg-transparent text-[0.74rem] outline-none border-b border-[var(--color-ink-soft)]"
             />
           ) : (
-            <p className="text-[0.74rem] truncate">{item.title}</p>
+            <p className={`text-[0.74rem] truncate ${done ? 'line-through opacity-60' : ''}`}>
+              {repeating && <span className="opacity-50 mr-0.5">↻</span>}
+              {item.title}
+            </p>
           )}
           {!short && (
             <p className="font-mono-num text-[0.62rem] text-[var(--color-ink-soft)]">
@@ -509,17 +550,33 @@ function Event({
         </div>
 
         {selected && (
-          <button
+          <div
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className="absolute top-0 right-0 px-1.5 text-[0.7rem] text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
-            aria-label="Delete event"
+            className="absolute top-0 right-0 flex items-center"
           >
-            ×
-          </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="px-1 text-[0.7rem] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+              aria-label={done ? 'Mark not done' : 'Mark done'}
+              title={done ? 'Mark not done' : 'Mark done'}
+            >
+              ✓
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="px-1 text-[0.7rem] text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+              aria-label={repeating ? 'Skip this one' : 'Delete event'}
+              title={repeating ? 'Skip this one' : 'Delete'}
+            >
+              ×
+            </button>
+          </div>
         )}
 
         {/* drag the bottom edge to lengthen */}
@@ -531,32 +588,87 @@ function Event({
         </span>
       </div>
       {selected && !editing && (
-        <ColourStrip onPick={onColour} />
+        <EventControls
+          repeat={item.repeat}
+          repeating={repeating}
+          occurrenceDate={occurrenceDate}
+          onPick={onColour}
+          onRepeat={onRepeat}
+          onRemoveSeries={onRemoveSeries}
+        />
       )}
     </div>
   );
 }
 
 const QUICK_COLOURS: NoteColor[] = ['clay', 'denim', 'sage', 'ochre', 'lilac', 'teal'];
+const REPEATS: (Repeat | undefined)[] = [undefined, 'daily', 'weekdays', 'weekly'];
 
-function ColourStrip({ onPick }: { onPick: (c: NoteColor) => void }) {
+/** Colour and repeat, shown under whichever event is selected. */
+function EventControls({
+  repeat,
+  repeating,
+  occurrenceDate,
+  onPick,
+  onRepeat,
+  onRemoveSeries,
+}: {
+  repeat: Repeat | undefined;
+  repeating: boolean;
+  occurrenceDate: string;
+  onPick: (c: NoteColor) => void;
+  onRepeat: (r: Repeat | undefined) => void;
+  onRemoveSeries: () => void;
+}) {
   return (
     <div
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute left-0 right-0 -bottom-6 z-50 flex justify-center gap-1 px-1"
+      className="absolute left-1/2 -translate-x-1/2 -bottom-[4.4rem] z-50 w-max max-w-[15rem] rounded-sm border border-[var(--color-paper-line)] bg-[var(--color-paper)] shadow-lg p-2 flex flex-col gap-1.5"
     >
-      {QUICK_COLOURS.map((c) => (
+      <div className="flex justify-center gap-1">
+        {QUICK_COLOURS.map((c) => (
+          <button
+            key={c}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPick(c);
+            }}
+            title={c}
+            className="w-3.5 h-3.5 rounded-full border border-[var(--color-paper)] shadow-sm"
+            style={{ background: NOTE_COLORS[c] }}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1">
+        {REPEATS.map((r) => (
+          <button
+            key={r ?? 'once'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRepeat(r);
+            }}
+            className={`text-[0.66rem] px-1.5 py-0.5 rounded-sm border transition-colors ${
+              repeat === r
+                ? 'border-[var(--color-accent)] text-[var(--color-ink)]'
+                : 'border-[var(--color-paper-line)] text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]'
+            }`}
+          >
+            {r ? REPEAT_LABEL[r] : 'once'}
+          </button>
+        ))}
+      </div>
+      {repeating && (
         <button
-          key={c}
           onClick={(e) => {
             e.stopPropagation();
-            onPick(c);
+            onRemoveSeries();
           }}
-          title={c}
-          className="w-3.5 h-3.5 rounded-full border border-[var(--color-paper)] shadow-sm"
-          style={{ background: NOTE_COLORS[c] }}
-        />
-      ))}
+          className="label hover:text-[var(--color-accent)] transition-colors"
+          title={`Removes every occurrence, not just ${occurrenceDate}`}
+        >
+          delete the whole series
+        </button>
+      )}
     </div>
   );
 }

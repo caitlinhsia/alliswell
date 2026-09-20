@@ -5,6 +5,7 @@ import { todayStr } from '../lib/date';
 import { moodMeta } from '../lib/mood';
 import { NOTE_COLORS } from '../lib/colors';
 import type { Priority } from '../types';
+import { expandSchedule } from '../lib/recurrence';
 
 const PRIORITY_COLOR: Record<Priority, string> = {
   high: 'var(--color-note-rust)',
@@ -21,6 +22,7 @@ type Row = {
   endTime?: string;
   colour: string;
   overdue?: boolean;
+  repeating?: boolean;
   subject?: string;
 };
 
@@ -40,7 +42,7 @@ export default function TodayPanel() {
   const subjects = useAppStore((s) => s.subjects);
   const studySessions = useAppStore((s) => s.studySessions);
   const journalEntries = useAppStore((s) => s.journalEntries);
-  const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
+  const toggleOccurrence = useAppStore((s) => s.toggleOccurrence);
   const toggleTodo = useAppStore((s) => s.toggleTodo);
 
   const today = todayStr();
@@ -57,20 +59,20 @@ export default function TodayPanel() {
     return s ? NOTE_COLORS[s.color] : undefined;
   };
 
-  const events: Row[] = schedule
-    .filter((s) => s.date === today)
-    .map((s) => ({
-      id: s.id,
-      kind: 'event' as const,
-      title: s.title,
-      done: s.done,
-      time: s.time,
-      endTime: s.endTime,
-      colour: s.color
-        ? NOTE_COLORS[s.color]
-        : subjectColour(s.subjectId) ?? 'var(--color-accent)',
-      subject: subjectName(s.subjectId),
-    }));
+  // expanded, so a weekly seminar shows up on today like anything else
+  const events: Row[] = expandSchedule(schedule, [today]).map((o) => ({
+    id: o.item.id,
+    kind: 'event' as const,
+    title: o.item.title,
+    done: o.done,
+    time: o.item.time,
+    endTime: o.item.endTime,
+    repeating: o.repeating,
+    colour: o.item.color
+      ? NOTE_COLORS[o.item.color]
+      : subjectColour(o.item.subjectId) ?? 'var(--color-accent)',
+    subject: subjectName(o.item.subjectId),
+  }));
 
   const due: Row[] = todos
     .filter((t) => !t.done && t.dueDate && t.dueDate <= today)
@@ -134,7 +136,9 @@ export default function TodayPanel() {
                   className="group flex items-baseline gap-3 py-1.5 border-b border-[var(--color-paper-line)]/60"
                 >
                   <button
-                    onClick={() => (r.kind === 'todo' ? toggleTodo(r.id) : toggleScheduleItem(r.id))}
+                    onClick={() =>
+                      r.kind === 'todo' ? toggleTodo(r.id) : toggleOccurrence(r.id, today)
+                    }
                     aria-label={`Complete ${r.title}`}
                     className="shrink-0 self-center w-[15px] h-[15px] rounded-full border-2 transition-transform hover:scale-110"
                     style={{
@@ -157,6 +161,7 @@ export default function TodayPanel() {
                       r.done ? 'line-through text-[var(--color-ink-faint)]' : ''
                     }`}
                   >
+                    {r.repeating && <span className="opacity-40 mr-1">↻</span>}
                     {r.title}
                   </span>
                   {r.subject && (

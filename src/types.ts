@@ -12,9 +12,13 @@ export type NoteColor =
   | 'sand'
   | 'slate';
 
+/** How often something comes back. Absent means it happens once. */
+export type Repeat = 'daily' | 'weekdays' | 'weekly';
+
 export interface ScheduleItem {
   id: string;
   title: string;
+  /** For a repeating item this is the first occurrence, not the only one. */
   date: string; // yyyy-MM-dd
   time?: string; // HH:mm
   endTime?: string; // HH:mm
@@ -22,6 +26,13 @@ export interface ScheduleItem {
   category: 'task' | 'event';
   subjectId?: string;
   color?: NoteColor;
+  repeat?: Repeat;
+  /** Last day the repeat applies, if it ever stops. */
+  repeatUntil?: string;
+  /** Occurrences deleted one at a time, without ending the series. */
+  skipDates?: string[];
+  /** Which occurrences of a repeating item are ticked off. */
+  doneDates?: string[];
 }
 
 export interface Subject {
