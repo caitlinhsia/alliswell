@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
+import { MoodTrend } from '../components/Trends';
 import Panel from '../components/Panel';
 import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
@@ -163,6 +164,10 @@ export default function JournalContent() {
             </ul>
           )}
         </Panel>
+      </div>
+
+      <div className="mt-6 shrink-0">
+        <MoodTrend />
       </div>
     </>
   );

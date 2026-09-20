@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { StudyTrend } from '../components/Trends';
 import Panel from '../components/Panel';
 import ColorPicker from '../components/ColorPicker';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
@@ -378,7 +379,11 @@ export default function StudyContent() {
         </Panel>
       </div>
 
-      <Panel className="mt-5">
+      <Panel className="mt-6">
+        <StudyTrend />
+      </Panel>
+
+      <Panel className="mt-6">
         <h3 className="font-display text-xl mb-3">Recent sessions</h3>
         {recentSessions.length === 0 ? (
           <p className="font-note text-sm text-[var(--color-ink-soft)]">

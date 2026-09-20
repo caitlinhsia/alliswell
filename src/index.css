@@ -64,6 +64,16 @@
   --color-accent: #a2552f;
   --color-accent-soft: #f2e4d9;
 
+  /* Mood is an ordered scale with a middle, so it gets a diverging ramp:
+     green at one pole, rust at the other, a neutral between. These steps were
+     checked for adjacent lightness separation and contrast against the paper,
+     which the decorative note colours are far too soft to pass. */
+  --mood-great: #4f6b47;
+  --mood-good: #86a07a;
+  --mood-okay: #b6a894;
+  --mood-low: #c07f52;
+  --mood-rough: #95431f;
+
   --color-tab-sage: #8d9c86;
   --color-tab-sky: #8199ad;
   --color-tab-blush: #b0533a;
@@ -96,6 +106,14 @@
   --color-ink-faint: #6e6153;
   --color-accent: #d38a5c;
   --color-accent-soft: #3a2a1f;
+
+  /* Dark is stepped again from scratch, not flipped: on a dark ground the
+     midpoint has to be the light one for the ramp to read. */
+  --mood-great: #688a5c;
+  --mood-good: #9cb58e;
+  --mood-okay: #d6cbbb;
+  --mood-low: #d49a61;
+  --mood-rough: #bb5730;
 }
 
 /* On a dark ground a drop shadow is invisible, so the stack of sheets under

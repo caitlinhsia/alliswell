@@ -5,11 +5,11 @@ import type { Mood } from '../types';
  * in the picker and `tone` tints the selected chip.
  */
 export const MOODS: { value: Mood; mark: string; label: string; tone: string }[] = [
-  { value: 'great', mark: '◝', label: 'Great', tone: 'var(--color-note-sage)' },
-  { value: 'good', mark: '⌣', label: 'Good', tone: 'var(--color-note-teal)' },
-  { value: 'okay', mark: '—', label: 'Okay', tone: 'var(--color-note-sand)' },
-  { value: 'low', mark: '⌢', label: 'Low', tone: 'var(--color-note-slate)' },
-  { value: 'rough', mark: '◞', label: 'Rough', tone: 'var(--color-note-rust)' },
+  { value: 'great', mark: '◝', label: 'Great', tone: 'var(--mood-great)' },
+  { value: 'good', mark: '⌣', label: 'Good', tone: 'var(--mood-good)' },
+  { value: 'okay', mark: '—', label: 'Okay', tone: 'var(--mood-okay)' },
+  { value: 'low', mark: '⌢', label: 'Low', tone: 'var(--mood-low)' },
+  { value: 'rough', mark: '◞', label: 'Rough', tone: 'var(--mood-rough)' },
 ];
 
 export function moodMeta(mood: Mood) {
