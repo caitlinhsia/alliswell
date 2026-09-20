@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import { todayStr } from '../lib/date';
+import { useMedia } from '../lib/useMedia';
 import { NOTE_COLORS } from '../lib/colors';
 import type { NoteColor, Priority, Repeat, ScheduleItem } from '../types';
 import { expandSchedule, REPEAT_LABEL } from '../lib/recurrence';
@@ -59,6 +60,9 @@ export default function ScheduleContent() {
   const toggleTodo = useAppStore((s) => s.toggleTodo);
   const updateTodo = useAppStore((s) => s.updateTodo);
 
+  // a week of 31px columns is unreadable on a phone, so narrow screens get a day
+  const narrow = useMedia('(max-width: 767px)');
+  const span = narrow ? 1 : 7;
   const [weekOffset, setWeekOffset] = useState(0);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -69,10 +73,16 @@ export default function ScheduleContent() {
   const dragRef = useRef<Drag | null>(null);
 
   const weekStart = useMemo(
-    () => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7),
-    [weekOffset]
+    () =>
+      narrow
+        ? addDays(new Date(), weekOffset)
+        : addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7),
+    [weekOffset, narrow]
   );
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const days = useMemo(
+    () => Array.from({ length: span }, (_, i) => addDays(weekStart, i)),
+    [weekStart, span]
+  );
   const dayKeys = days.map((d) => format(d, 'yyyy-MM-dd'));
   const today = todayStr();
 
@@ -92,8 +102,8 @@ export default function ScheduleContent() {
     const grid = gridRef.current;
     if (!grid) return null;
     const r = grid.getBoundingClientRect();
-    const colW = r.width / 7;
-    const col = Math.max(0, Math.min(6, Math.floor((e.clientX - r.left) / colW)));
+    const colW = r.width / span;
+    const col = Math.max(0, Math.min(span - 1, Math.floor((e.clientX - r.left) / colW)));
     const min = START_HOUR * 60 + ((e.clientY - r.top) / HOUR_H) * 60;
     return { date: dayKeys[col], min };
   }
@@ -193,18 +203,20 @@ export default function ScheduleContent() {
       {/* week controls */}
       <div className="shrink-0 flex items-center justify-between gap-4 mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => setWeekOffset((w) => w - 1)} className="keycap" aria-label="Previous week">
+          <button onClick={() => setWeekOffset((w) => w - 1)} className="keycap" aria-label={narrow ? 'Previous day' : 'Previous week'}>
             ←
           </button>
           <button onClick={() => setWeekOffset(0)} className="btn">
             Today
           </button>
-          <button onClick={() => setWeekOffset((w) => w + 1)} className="keycap" aria-label="Next week">
+          <button onClick={() => setWeekOffset((w) => w + 1)} className="keycap" aria-label={narrow ? 'Next day' : 'Next week'}>
             →
           </button>
         </div>
-        <span className="font-display text-base">
-          {format(weekStart, 'd MMM')} – {format(addDays(weekStart, 6), 'd MMM yyyy')}
+        <span className="font-display text-base whitespace-nowrap">
+          {narrow
+            ? format(weekStart, 'EEE d MMM')
+            : `${format(weekStart, 'd MMM')} – ${format(addDays(weekStart, 6), 'd MMM yyyy')}`}
         </span>
         <span className="label hidden md:inline">drag to move · drag the edge to lengthen</span>
       </div>
@@ -365,14 +377,14 @@ export default function ScheduleContent() {
               <div
                 key={key}
                 className="absolute top-0 bottom-0 border-l border-[var(--color-paper-line)]/60"
-                style={{ left: `${(i / 7) * 100}%`, width: `${100 / 7}%` }}
+                style={{ left: `${(i / span) * 100}%`, width: `${100 / span}%` }}
               >
                 {key === today && (
                   <div className="absolute inset-0 bg-[var(--color-accent)]/[0.035] pointer-events-none" />
                 )}
               </div>
             ))}
-            <NowLine dayKeys={dayKeys} today={today} />
+            <NowLine dayKeys={dayKeys} today={today} span={span} />
 
             {timed.map((o) => {
               const item = o.item;
@@ -392,6 +404,7 @@ export default function ScheduleContent() {
                   done={o.done}
                   colour={colour}
                   col={col}
+                  span={span}
                   top={yOf(startMin)}
                   height={(len / 60) * HOUR_H}
                   startMin={startMin}
@@ -426,7 +439,7 @@ function colourOf(item: ScheduleItem, subjects: { id: string; color: NoteColor }
 }
 
 /** The current-time hairline, as in a calendar app. */
-function NowLine({ dayKeys, today }: { dayKeys: string[]; today: string }) {
+function NowLine({ dayKeys, today, span }: { dayKeys: string[]; today: string; span: number }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = window.setInterval(() => setNow(new Date()), 60_000);
@@ -439,7 +452,7 @@ function NowLine({ dayKeys, today }: { dayKeys: string[]; today: string }) {
   return (
     <div
       className="absolute z-20 pointer-events-none flex items-center"
-      style={{ top: yOf(min), left: `${(col / 7) * 100}%`, width: `${100 / 7}%` }}
+      style={{ top: yOf(min), left: `${(col / span) * 100}%`, width: `${100 / span}%` }}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] -ml-[3px]" />
       <span className="flex-1 h-px bg-[var(--color-accent)]" />
@@ -454,6 +467,7 @@ function Event({
   done,
   colour,
   col,
+  span,
   top,
   height,
   startMin,
@@ -475,6 +489,7 @@ function Event({
   done: boolean;
   colour: string;
   col: number;
+  span: number;
   top: number;
   height: number;
   startMin: number;
@@ -497,8 +512,8 @@ function Event({
     <div
       className="absolute px-[3px] touch-none"
       style={{
-        left: `${(col / 7) * 100}%`,
-        width: `${100 / 7}%`,
+        left: `${(col / span) * 100}%`,
+        width: `${100 / span}%`,
         top,
         height,
         zIndex: dragging ? 60 : selected ? 40 : 10,

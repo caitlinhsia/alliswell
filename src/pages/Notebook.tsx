@@ -8,6 +8,7 @@ import Icon, { type IconName } from '../components/Icon';
 import AccountMenu from '../components/AccountMenu';
 import TodayPanel from '../components/TodayPanel';
 import SearchPalette from '../components/SearchPalette';
+import { useMedia } from '../lib/useMedia';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
 import StudyContent from './StudyContent';
@@ -446,6 +447,8 @@ function defaultPos(i: number) {
 }
 
 function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
+  // spreading pages across a desk needs a desk; on a phone they stack instead
+  const narrow = useMedia('(max-width: 767px)');
   const deskGroups = useAppStore((s) => s.deskGroups);
   const openDeskPage = useAppStore((s) => s.openDeskPage);
   const closeDeskPage = useAppStore((s) => s.closeDeskPage);
@@ -548,17 +551,19 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
             ))}
         </div>
         <p className="font-note text-xs text-[var(--color-ink-soft)]">
-          drag the torn edge to move a page · drop pages on top of each other · drag a corner to resize
+          {narrow
+            ? 'tap a page to open it in full'
+            : 'drag the torn edge to move a page · drop pages on top of each other · drag a corner to resize'}
         </p>
       </div>
 
       <div
         ref={canvasRef}
-        onPointerMove={onMove}
-        onPointerUp={endDrag}
-        onPointerCancel={() => endDrag()}
-        className="relative"
-        style={{ width: extent.w, height: extent.h }}
+        onPointerMove={narrow ? undefined : onMove}
+        onPointerUp={narrow ? undefined : endDrag}
+        onPointerCancel={narrow ? undefined : () => endDrag()}
+        className={narrow ? 'flex flex-col gap-4' : 'relative'}
+        style={narrow ? undefined : { width: extent.w, height: extent.h }}
       >
         {cards.map((card, i) => {
           const p = posOf(card.key, i);
@@ -570,40 +575,51 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
               ref={(el) => {
                 cardRefs.current[card.key] = el;
               }}
-              onPointerDown={() => bringToFront(card.key, p)}
-              className={`absolute ${
-                dropTarget === card.key ? 'ring-2 ring-[var(--color-accent)] ring-offset-4 ring-offset-[var(--color-ground)] rounded-sm' : ''
-              }`}
-              style={{
-                left: p.x,
-                top: p.y,
-                zIndex: isDragging ? 9999 : p.z,
-                transition: isDragging ? 'none' : 'filter 160ms ease, transform 160ms ease',
-                transform: isDragging ? 'scale(1.035)' : 'scale(1)',
-                filter: isDragging
-                  ? 'drop-shadow(0 18px 26px rgba(51,41,31,0.32))'
-                  : 'drop-shadow(0 4px 8px rgba(51,41,31,0.14))',
-              }}
+              onPointerDown={narrow ? undefined : () => bringToFront(card.key, p)}
+              className={
+                narrow
+                  ? 'w-full'
+                  : `absolute ${
+                      dropTarget === card.key
+                        ? 'ring-2 ring-[var(--color-accent)] ring-offset-4 ring-offset-[var(--color-ground)] rounded-sm'
+                        : ''
+                    }`
+              }
+              style={
+                narrow
+                  ? { filter: 'drop-shadow(0 4px 8px rgba(51,41,31,0.14))' }
+                  : {
+                      left: p.x,
+                      top: p.y,
+                      zIndex: isDragging ? 9999 : p.z,
+                      transition: isDragging ? 'none' : 'filter 160ms ease, transform 160ms ease',
+                      transform: isDragging ? 'scale(1.035)' : 'scale(1)',
+                      filter: isDragging
+                        ? 'drop-shadow(0 18px 26px rgba(51,41,31,0.32))'
+                        : 'drop-shadow(0 4px 8px rgba(51,41,31,0.14))',
+                    }
+              }
             >
               {isFront ? (
                 <NotepadPage
-                  rotate={isDragging ? 0 : -1.5}
+                  rotate={narrow || isDragging ? 0 : -1.5}
                   ringCount={6}
-                  className="w-64"
-                  lifted={isDragging}
-                  grabHandle={(e) => startDrag(e, card.key, i)}
+                  className={narrow ? 'w-full' : 'w-64'}
+                  lifted={!narrow && isDragging}
+                  grabHandle={narrow ? undefined : (e) => startDrag(e, card.key, i)}
                 >
                   <FrontPage compact />
                 </NotepadPage>
               ) : card.group.length === 1 ? (
                 <NotepadPage
                   title={PAGE_META[card.group[0]].title}
-                  rotate={isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
+                  rotate={narrow || isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
                   onClose={() => closeDeskPage(card.group[0])}
-                  size={deskSizes[card.group[0]]}
-                  onResize={(sz) => setDeskSize(card.group[0], sz)}
-                  lifted={isDragging}
-                  grabHandle={(e) => startDrag(e, card.key, i)}
+                  size={narrow ? undefined : deskSizes[card.group[0]]}
+                  onResize={narrow ? undefined : (sz) => setDeskSize(card.group[0], sz)}
+                  className={narrow ? 'w-full' : ''}
+                  lifted={!narrow && isDragging}
+                  grabHandle={narrow ? undefined : (e) => startDrag(e, card.key, i)}
                 >
                   <div className="flex-1 min-h-0 overflow-y-auto">
                     {renderMini(card.group[0])}
@@ -617,10 +633,10 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
                 </NotepadPage>
               ) : (
                 <FoldOutSpread
-                  rotate={isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
+                  rotate={narrow || isDragging ? 0 : ROTATIONS[i % ROTATIONS.length]}
                   ringCount={6 * card.group.length}
-                  lifted={isDragging}
-                  grabHandle={(e) => startDrag(e, card.key, i)}
+                  lifted={!narrow && isDragging}
+                  grabHandle={narrow ? undefined : (e) => startDrag(e, card.key, i)}
                 >
                   {card.group.map((key, pi) => (
                     <FoldPane
