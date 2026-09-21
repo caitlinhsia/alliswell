@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import { MoodTrend } from '../components/Trends';
+import MoodPicker from '../components/MoodPicker';
 import Panel from '../components/Panel';
 import DateField from '../components/DateField';
 import { todayStr } from '../lib/date';
-import { MOODS, moodMeta } from '../lib/mood';
+import { moodMeta } from '../lib/mood';
 import type { Mood } from '../types';
 
 const PROMPTS = [
@@ -73,25 +74,13 @@ export default function JournalContent() {
               allowClear={false}
             />
             <div className="flex gap-1.5">
-              {MOODS.map((m) => (
-                <button
-                  key={m.value}
-                  onClick={() => {
-                    setMood(m.value);
-                    save(text, m.value);
-                  }}
-                  title={m.label}
-                  className={`font-note text-xs px-2.5 h-8 rounded-full border flex items-center gap-1.5 transition-colors ${
-                    mood === m.value
-                      ? 'border-[var(--color-ink)]'
-                      : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
-                  }`}
-                  style={mood === m.value ? { background: m.tone } : undefined}
-                >
-                  <span className="text-sm leading-none">{m.mark}</span>
-                  {m.label}
-                </button>
-              ))}
+              <MoodPicker
+                value={mood}
+                onPick={(m) => {
+                  setMood(m);
+                  save(text, m);
+                }}
+              />
             </div>
           </div>
 
@@ -143,7 +132,7 @@ export default function JournalContent() {
         </Panel>
 
         <Panel className="flex flex-col h-full overflow-hidden">
-          <h3 className="font-display text-xl mb-3 shrink-0">Past entries</h3>
+          <h3 className="section mb-3 shrink-0">Past entries</h3>
           {history.length === 0 ? (
             <p className="font-note text-sm text-[var(--color-ink-soft)]">Entries you write will collect here, newest first.</p>
           ) : (

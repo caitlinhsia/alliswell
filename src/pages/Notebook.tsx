@@ -7,6 +7,7 @@ import StickyLayer from '../components/StickyLayer';
 import Icon, { type IconName } from '../components/Icon';
 import AccountMenu from '../components/AccountMenu';
 import TodayPanel from '../components/TodayPanel';
+import MoodPicker from '../components/MoodPicker';
 import SearchPalette from '../components/SearchPalette';
 import { useMedia } from '../lib/useMedia';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
@@ -17,7 +18,7 @@ import NotesBoard from './NotesBoard';
 import TodoContent from './TodoContent';
 import WriteContent from './WriteContent';
 import { todayStr, greeting } from '../lib/date';
-import { MOODS, moodMeta } from '../lib/mood';
+import { moodMeta } from '../lib/mood';
 import { NOTE_COLORS, NOTE_COLOR_LIST } from '../lib/colors';
 
 const PAGE_META: Record<DeskPageKey, { title: string; icon: IconName }> = {
@@ -833,38 +834,11 @@ function MoodWidget({ compact }: { compact: boolean }) {
 
   return (
     <div className="flex gap-2">
-      {MOODS.map((m) => (
-        <button
-          key={m.value}
-          onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
-          title={m.label}
-          className={`font-body flex flex-col items-center leading-none transition-colors ${
-            compact ? 'gap-1 text-[10px]' : 'gap-1.5 text-[0.78rem]'
-          } ${
-            todayEntry?.mood === m.value
-              ? 'text-[var(--color-accent)]'
-              : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'
-          }`}
-        >
-          <span
-            className={`flex items-center justify-center rounded-full border transition-all ${
-              compact ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-lg'
-            } ${
-              todayEntry?.mood === m.value
-                ? 'border-transparent'
-                : 'border-[var(--color-paper-line)]'
-            }`}
-            style={
-              todayEntry?.mood === m.value
-                ? { background: m.tone, color: 'var(--color-ink)' }
-                : undefined
-            }
-          >
-            {m.mark}
-          </span>
-          {!compact && <span>{m.label}</span>}
-        </button>
-      ))}
+      <MoodPicker
+        value={todayEntry?.mood}
+        size={compact ? 'compact' : 'regular'}
+        onPick={(m) => upsertJournalEntry(today, m, todayEntry?.text ?? '')}
+      />
     </div>
   );
 }
@@ -1026,22 +1000,12 @@ function MiniJournal() {
   return (
     <div>
       <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">How's today going?</p>
-      <div className="flex gap-1.5 mb-2">
-        {MOODS.map((m) => (
-          <button
-            key={m.value}
-            onClick={() => upsertJournalEntry(today, m.value, todayEntry?.text ?? '')}
-            title={m.label}
-            className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm ${
-              todayEntry?.mood === m.value
-                ? 'border-[var(--color-ink)]'
-                : 'border-[var(--color-paper-line)] hover:bg-[var(--color-paper-deep)]/60'
-            }`}
-            style={todayEntry?.mood === m.value ? { background: m.tone } : undefined}
-          >
-            {m.mark}
-          </button>
-        ))}
+      <div className="mb-2">
+        <MoodPicker
+          value={todayEntry?.mood}
+          size="compact"
+          onPick={(m) => upsertJournalEntry(today, m, todayEntry?.text ?? '')}
+        />
       </div>
       {todayEntry && (
         <p className="font-note text-xs text-[var(--color-ink-soft)]">

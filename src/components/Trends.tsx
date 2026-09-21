@@ -57,7 +57,7 @@ export function MoodTrend({ weeks = 10 }: { weeks?: number }) {
         <span className="font-body text-[0.78rem] text-[var(--color-ink-soft)]">
           {recorded === 0
             ? 'nothing marked yet'
-            : `${recorded} days marked${
+            : `${recorded} day${recorded === 1 ? '' : 's'} marked${
                 commonest ? ` · mostly ${moodMeta(commonest[0]).label.toLowerCase()}` : ''
               }`}
         </span>
@@ -150,7 +150,10 @@ export function StudyTrend({ days = 14 }: { days?: number }) {
         <h3 className="section">Focus, two weeks</h3>
         <span className="flex-1" />
         <span className="font-body text-[0.78rem] text-[var(--color-ink-soft)]">
-          {grand === 0 ? 'no sessions yet' : `${grand} min across ${rows.filter((r) => r.total).length} subjects`}
+          {grand === 0 ? 'no sessions yet' : (() => {
+                const n = rows.filter((r) => r.total).length;
+                return `${grand} min across ${n} subject${n === 1 ? '' : 's'}`;
+              })()}
         </span>
       </div>
 

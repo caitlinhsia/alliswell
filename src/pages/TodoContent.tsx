@@ -121,7 +121,12 @@ export default function TodoContent() {
           <select
             value={subjectId ?? ''}
             onChange={(e) => setSubjectId(e.target.value || undefined)}
-            className="btn"
+            className="btn appearance-none pr-6 bg-[length:8px] bg-no-repeat"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%237d7060'/></svg>\")",
+              backgroundPosition: 'right 0.55rem center',
+            }}
           >
             <option value="">no subject</option>
             {subjects.map((s) => (

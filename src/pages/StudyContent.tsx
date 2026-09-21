@@ -100,7 +100,7 @@ export default function StudyContent() {
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
       <div className="grid md:grid-cols-2 gap-5">
         <Panel>
-          <h3 className="font-display text-xl mb-3">Focus timer</h3>
+          <h3 className="section mb-3">Focus timer</h3>
           <div className="flex gap-2 mb-4 flex-wrap">
             {subjects.map((s) => (
               <button
@@ -230,7 +230,7 @@ export default function StudyContent() {
         </Panel>
 
         <Panel>
-          <h3 className="font-display text-xl mb-3">Subjects</h3>
+          <h3 className="section mb-3">Subjects</h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -273,7 +273,7 @@ export default function StudyContent() {
             ))}
           </ul>
 
-          <h4 className="font-display text-lg mb-2">
+          <h4 className="subsection mb-2 mt-4 block">
             To-dos {subjects.find((s) => s.id === activeSubjectId)?.name && `· ${subjects.find((s) => s.id === activeSubjectId)?.name}`}
           </h4>
           <form
@@ -307,12 +307,11 @@ export default function StudyContent() {
           )}
           <ul className="space-y-1">
             {subjectTodos.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 font-note text-sm">
-                <input
-                  type="checkbox"
-                  checked={t.done}
-                  onChange={() => toggleTodo(t.id)}
-                  className="accent-[var(--color-accent)]"
+              <li key={t.id} className="group flex items-center gap-2 font-note text-sm">
+                <button
+                  onClick={() => toggleTodo(t.id)}
+                  aria-label={`Complete ${t.text}`}
+                  className="shrink-0 w-[15px] h-[15px] rounded-full border-2 border-[var(--color-note-ochre)] transition-transform hover:scale-110"
                 />
                 {editingTodoId === t.id ? (
                   <input
@@ -347,9 +346,9 @@ export default function StudyContent() {
                 )}
                 <button
                   onClick={() => removeTodo(t.id)}
-                  className="text-[var(--color-ink-soft)]/40 hover:text-red-500 shrink-0 px-1.5 -my-1 -mr-1"
+                  className="label opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity shrink-0"
                 >
-                  ×
+                  delete
                 </button>
               </li>
             ))}
@@ -361,12 +360,11 @@ export default function StudyContent() {
               </summary>
               <ul className="space-y-1 mt-1.5">
                 {subjectDone.map((t) => (
-                  <li key={t.id} className="flex items-center gap-2 font-note text-sm">
-                    <input
-                      type="checkbox"
-                      checked
-                      onChange={() => toggleTodo(t.id)}
-                      className="accent-[var(--color-accent)]"
+                  <li key={t.id} className="group flex items-center gap-2 font-note text-sm">
+                    <button
+                      onClick={() => toggleTodo(t.id)}
+                      aria-label={`Undo ${t.text}`}
+                      className="shrink-0 w-[15px] h-[15px] rounded-full bg-[var(--color-note-ochre)]"
                     />
                     <span className="line-through text-[var(--color-ink-soft)] truncate">
                       {t.text}
@@ -384,7 +382,7 @@ export default function StudyContent() {
       </Panel>
 
       <Panel className="mt-6">
-        <h3 className="font-display text-xl mb-3">Recent sessions</h3>
+        <h3 className="section mb-3">Recent sessions</h3>
         {recentSessions.length === 0 ? (
           <p className="font-note text-sm text-[var(--color-ink-soft)]">
             Finished sessions land here, and feed the two-week chart above.
