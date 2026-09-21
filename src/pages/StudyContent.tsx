@@ -223,7 +223,7 @@ export default function StudyContent() {
             )}
             {!activeSubjectId && (
               <p className="font-note text-xs text-[var(--color-ink-soft)] mt-2">
-                Add a subject below to start timing.
+                Add a subject on the right, then pick it to start timing against it.
               </p>
             )}
           </div>
@@ -387,7 +387,7 @@ export default function StudyContent() {
         <h3 className="font-display text-xl mb-3">Recent sessions</h3>
         {recentSessions.length === 0 ? (
           <p className="font-note text-sm text-[var(--color-ink-soft)]">
-            Completed sessions will show up here.
+            Finished sessions land here, and feed the two-week chart above.
           </p>
         ) : (
           <ul className="font-note text-sm space-y-1">

@@ -145,7 +145,7 @@ export default function JournalContent() {
         <Panel className="flex flex-col h-full overflow-hidden">
           <h3 className="font-display text-xl mb-3 shrink-0">Past entries</h3>
           {history.length === 0 ? (
-            <p className="font-note text-sm text-[var(--color-ink-soft)]">Nothing written yet.</p>
+            <p className="font-note text-sm text-[var(--color-ink-soft)]">Entries you write will collect here, newest first.</p>
           ) : (
             <ul className="space-y-1.5 flex-1 overflow-y-auto">
               {history.map((e) => (

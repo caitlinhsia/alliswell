@@ -46,7 +46,7 @@ export default function NotesBoard() {
         <div className="relative" style={{ width: 2400, height: 1600 }}>
           {notes.length === 0 && (
             <p className="absolute top-10 left-10 font-note text-[var(--color-ink-soft)]">
-              Your corkboard is empty — add a note above to get started.
+              Pick a colour above to drop a note here, then drag it wherever you like.
             </p>
           )}
           {notes.map((note) => (

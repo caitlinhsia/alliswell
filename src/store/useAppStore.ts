@@ -28,6 +28,8 @@ type UndoSnapshot =
   | { kind: 'schedule'; item: ScheduleItem }
   | { kind: 'todo'; item: TodoItem }
   | { kind: 'note'; item: Note }
+  | { kind: 'todos'; items: TodoItem[] }
+  | { kind: 'occurrence'; id: string; date: string }
   | { kind: 'subject'; item: Subject; todos: TodoItem[]; sessions: StudySession[] }
   | { kind: 'sticky'; item: StickyNote }
   | { kind: 'mindMap'; items: MindMapNode[] }
@@ -156,6 +158,17 @@ export const useAppStore = create<AppState>()(
               return { todos: [...state.todos, s.item], pendingUndo: null };
             case 'note':
               return { notes: [s.item, ...state.notes], pendingUndo: null };
+            case 'todos':
+              return { todos: [...state.todos, ...s.items], pendingUndo: null };
+            case 'occurrence':
+              return {
+                schedule: state.schedule.map((item) =>
+                  item.id === s.id
+                    ? { ...item, skipDates: (item.skipDates ?? []).filter((d) => d !== s.date) }
+                    : item
+                ),
+                pendingUndo: null,
+              };
             case 'subject':
               return {
                 subjects: [...state.subjects, s.item],
@@ -282,13 +295,21 @@ export const useAppStore = create<AppState>()(
           }),
         })),
       skipOccurrence: (id, date) =>
-        set((s) => ({
-          schedule: s.schedule.map((item) =>
-            item.id === id
-              ? { ...item, skipDates: [...(item.skipDates ?? []), date] }
-              : item
-          ),
-        })),
+        set((s) => {
+          const item = s.schedule.find((x) => x.id === id);
+          return {
+            schedule: s.schedule.map((x) =>
+              x.id === id ? { ...x, skipDates: [...(x.skipDates ?? []), date] } : x
+            ),
+            pendingUndo: item
+              ? {
+                  snapshot: { kind: 'occurrence', id, date },
+                  label: `Skipped "${item.title}" on this day`,
+                  at: Date.now(),
+                }
+              : s.pendingUndo,
+          };
+        }),
       setScheduleRepeat: (id, repeat) =>
         set((s) => ({
           schedule: s.schedule.map((item) =>
@@ -332,7 +353,19 @@ export const useAppStore = create<AppState>()(
               : t
           ),
         })),
-      clearCompletedTodos: () => set((s) => ({ todos: s.todos.filter((t) => !t.done) })),
+      clearCompletedTodos: () =>
+        set((s) => {
+          const cleared = s.todos.filter((t) => t.done);
+          if (cleared.length === 0) return {};
+          return {
+            todos: s.todos.filter((t) => !t.done),
+            pendingUndo: {
+              snapshot: { kind: 'todos', items: cleared },
+              label: `Cleared ${cleared.length} completed ${cleared.length === 1 ? 'task' : 'tasks'}`,
+              at: Date.now(),
+            },
+          };
+        }),
       removeTodo: (id) =>
         set((s) => {
           const item = s.todos.find((t) => t.id === id);

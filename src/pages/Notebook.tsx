@@ -883,7 +883,7 @@ function MiniSchedule() {
   return (
     <div>
       {items.length === 0 ? (
-        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing planned yet.</p>
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing planned today.</p>
       ) : (
         <ul className="space-y-1.5 mb-2 max-h-40 overflow-y-auto">
           {items.map((item) => (
@@ -949,7 +949,7 @@ function MiniTodo() {
   return (
     <div>
       {items.length === 0 ? (
-        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing on your list.</p>
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing due today.</p>
       ) : (
         <ul className="space-y-1.5 mb-2 max-h-40 overflow-y-auto">
           {items.map((t) => (
@@ -1092,7 +1092,7 @@ function MiniNotes() {
   return (
     <div>
       {pinned.length === 0 ? (
-        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">No sticky notes yet.</p>
+        <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">No notes pinned yet.</p>
       ) : (
         <div className="flex gap-2 mb-2 flex-wrap">
           {pinned.map((note) => (

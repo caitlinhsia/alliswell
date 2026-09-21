@@ -167,7 +167,7 @@ export default function TodoContent() {
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 pb-4">
         {active.length === 0 && done.length === 0 ? (
           <p className="font-body text-sm text-[var(--color-ink-soft)] py-4">
-            Nothing here yet — add something above.
+            Nothing on the list. Add one above — typing “essay draft p1 fri” sets the priority and the day at the same time.
           </p>
         ) : null}
 
