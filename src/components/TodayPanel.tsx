@@ -113,7 +113,7 @@ export default function TodayPanel() {
   const mood = journalEntries.find((e) => e.date === today)?.mood;
 
   return (
-    <section className="mt-7">
+    <section className="mt-7 page-body-wide">
       <div className="flex items-baseline gap-3 mb-3">
         <h2 className="section">Today</h2>
         <span className="flex-1" />

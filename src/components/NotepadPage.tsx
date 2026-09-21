@@ -175,7 +175,7 @@ export default function NotepadPage({
           </span>
         )}
         {fill && <span className="margin-rule" />}
-        {title && <h2 className="page-title capitalize mb-5">{title}</h2>}
+        {title && <h2 className="page-title capitalize mb-7">{title}</h2>}
         {children}
       </div>
     </div>

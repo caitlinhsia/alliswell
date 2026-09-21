@@ -85,9 +85,9 @@ export default function TodoContent() {
   const effDue = dueDate ?? parsed.dueDate;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col page-body w-full">
       {/* add a task */}
-      <form onSubmit={handleAdd} className="shrink-0 flex flex-wrap items-center gap-2 mb-1">
+      <form onSubmit={handleAdd} className="shrink-0 flex flex-wrap items-center gap-2">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -121,10 +121,12 @@ export default function TodoContent() {
           <select
             value={subjectId ?? ''}
             onChange={(e) => setSubjectId(e.target.value || undefined)}
-            className="btn appearance-none pr-6 bg-[length:8px] bg-no-repeat"
+            className="btn appearance-none pr-7"
             style={{
               backgroundImage:
-                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%237d7060'/></svg>\")",
+                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%237d7060'/></svg>\")",
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '8px 5px',
               backgroundPosition: 'right 0.55rem center',
             }}
           >
@@ -148,7 +150,7 @@ export default function TodoContent() {
       )}
 
       {/* subjects */}
-      <div className="shrink-0 flex items-center gap-1.5 flex-wrap mt-4 mb-3">
+      <div className="shrink-0 flex items-center gap-1.5 flex-wrap mt-8 mb-4">
         <SubjectChip label="Everything" active={filter === 'all'} onClick={() => setFilter('all')} count={todos.filter((t) => !t.done).length} />
         {subjects.map((s) => (
           <SubjectChip
@@ -233,7 +235,7 @@ export default function TodoContent() {
                 {done.map((t) => (
                   <li
                     key={t.id}
-                    className="group flex items-baseline gap-3 py-1.5 border-b border-[var(--color-paper-line)]/60"
+                    className="group flex items-baseline gap-3 py-2 border-b border-[var(--color-paper-line)]/60"
                   >
                     <button
                       onClick={() => toggleTodo(t.id)}
@@ -350,7 +352,7 @@ function TaskRow({
   }
 
   return (
-    <div className="group border-b border-[var(--color-paper-line)]/70 py-2.5">
+    <div className="group border-b border-[var(--color-paper-line)]/70 py-3">
       <div className="flex items-start gap-3">
         <button
           onClick={check}

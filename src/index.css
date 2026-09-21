@@ -162,7 +162,7 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -171,7 +171,7 @@ body {
 /* Tiny letterspaced caps in mono — the workhorse label of this design. */
 .label {
   font-family: var(--font-body);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -190,13 +190,29 @@ body {
 
 
 
+/* Content sits in a column rather than spanning the whole sheet. A to-do row
+   running the full width puts its title and its date a thousand pixels apart,
+   which reads as sprawling and cramped at the same time. Pages that genuinely
+   need the width — the calendar's seven columns, the corkboard — opt out. */
+.page-body {
+  max-width: 54rem;
+}
+.page-body-wide {
+  max-width: 68rem;
+}
+
+/* Vertical rhythm: one gap between sections, everywhere. */
+.stack > * + * {
+  margin-top: 2.25rem;
+}
+
 /* Three heading sizes, and only three. The page title is the largest thing on
    a page; sections sit under it; sub-sections under those. They had drifted
    into four competing styles, with page titles coming out smaller than the
    headings inside them. */
 .page-title {
   font-family: var(--font-display);
-  font-size: 1.32rem;
+  font-size: 1.15rem;
   font-weight: 500;
   letter-spacing: -0.005em;
   color: var(--color-ink);
@@ -208,7 +224,7 @@ body {
 
 .subsection {
   font-family: var(--font-display);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--color-ink-soft);
@@ -219,7 +235,7 @@ body {
    rule, which is somebody else's signature. */
 .section {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 500;
   letter-spacing: 0.005em;
   color: var(--color-ink);
@@ -229,9 +245,9 @@ body {
    the single action a page is actually about. */
 .btn {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 400;
-  padding: 0.35rem 0.9rem;
+  padding: 0.3rem 0.8rem;
   border: 1px solid var(--color-paper-line);
   border-radius: 3px;
   background: var(--color-paper);
@@ -247,9 +263,9 @@ body {
 
 .btn-primary {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 400;
-  padding: 0.35rem 1.1rem;
+  padding: 0.3rem 1rem;
   border: 1px solid var(--color-accent);
   border-radius: 3px;
   background: var(--color-accent);

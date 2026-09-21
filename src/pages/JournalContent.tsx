@@ -63,7 +63,7 @@ export default function JournalContent() {
 
   return (
     <>
-      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">A page for however today went</p>
+      <p className="font-body text-[0.9rem] text-[var(--color-ink-soft)] -mt-4 mb-8">A page for however today went</p>
 
       <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_260px] gap-5">
         <Panel className="flex flex-col h-full">

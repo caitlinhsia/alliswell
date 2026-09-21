@@ -93,12 +93,12 @@ export default function StudyContent() {
 
   return (
     <>
-      <p className="font-body text-[0.95rem] text-[var(--color-ink-soft)] -mt-2 mb-5">
+      <p className="font-body text-[0.9rem] text-[var(--color-ink-soft)] -mt-4 mb-8">
         {todayMinutes} minutes focused today
       </p>
 
-      <div className="flex-1 overflow-y-auto -mx-1 px-1">
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="flex-1 overflow-y-auto -mx-1 px-1 page-body-wide w-full">
+      <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
         <Panel>
           <h3 className="section mb-3">Focus timer</h3>
           <div className="flex gap-2 mb-4 flex-wrap">
@@ -377,11 +377,11 @@ export default function StudyContent() {
         </Panel>
       </div>
 
-      <Panel className="mt-6">
+      <Panel className="mt-10">
         <StudyTrend />
       </Panel>
 
-      <Panel className="mt-6">
+      <Panel className="mt-10">
         <h3 className="section mb-3">Recent sessions</h3>
         {recentSessions.length === 0 ? (
           <p className="font-note text-sm text-[var(--color-ink-soft)]">
