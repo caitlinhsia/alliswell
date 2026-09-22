@@ -221,131 +221,134 @@ export default function ScheduleContent() {
         <span className="label hidden md:inline">drag to move · drag the edge to lengthen</span>
       </div>
 
-      {/* day headers */}
-      <div className="shrink-0 flex border-b border-[var(--color-paper-line)]">
-        <div className="w-12 shrink-0" />
-        {days.map((d, i) => {
-          const isToday = isSameDay(d, parseISO(today));
-          return (
-            <div key={i} className="flex-1 min-w-0 px-1 pb-1.5 text-center">
-              <div className="label">{format(d, 'EEE')}</div>
-              <div
-                className={`font-display text-lg leading-tight ${
-                  isToday ? 'text-[var(--color-accent)]' : ''
-                }`}
-              >
-                {format(d, 'd')}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* all-day strip */}
-      <div className="shrink-0 flex border-b border-[var(--color-paper-line)] min-h-[34px]">
-        <div className="w-12 shrink-0 label pt-1.5 pr-1 text-right">all day</div>
-        {dayKeys.map((key) => (
-          <div
-            key={key}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDropDay(key);
-            }}
-            onDragLeave={() => setDropDay((d) => (d === key ? null : d))}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDropDay(null);
-              const id = e.dataTransfer.getData('text/todo');
-              if (id) updateTodo(id, { dueDate: key });
-            }}
-            className={`flex-1 min-w-0 border-l border-[var(--color-paper-line)]/60 p-1 space-y-1 transition-colors ${
-              dropDay === key ? 'bg-[var(--color-accent)]/10' : ''
-            }`}
-          >
-            {allDay
-              .filter((o) => o.date === key)
-              .map((o) => (
-                <button
-                  key={`${o.item.id}@${o.date}`}
-                  onClick={() => toggleOccurrence(o.item.id, o.date)}
-                  onDoubleClick={() =>
-                    o.repeating ? skipOccurrence(o.item.id, o.date) : removeScheduleItem(o.item.id)
-                  }
-                  title={
-                    o.repeating
-                      ? `Repeats ${REPEAT_LABEL[o.item.repeat!]} · click to tick · double-click to skip this one`
-                      : 'Click to tick off · double-click to delete'
-                  }
-                  className={`block w-full text-left truncate text-[0.72rem] px-1.5 py-0.5 rounded-sm ${
-                    o.done ? 'line-through text-[var(--color-ink-faint)]' : ''
-                  }`}
-                  style={{
-                    background: `color-mix(in srgb, ${colourOf(o.item, subjects)} 20%, transparent)`,
-                  }}
-                >
-                  {o.repeating && <span className="opacity-50 mr-0.5">↻</span>}
-                  {o.item.title}
-                </button>
-              ))}
-            {dueTodos
-              .filter((t) => t.dueDate === key)
-              .map((t) => (
-                <div
-                  key={t.id}
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData('text/todo', t.id)}
-                  title="A to-do due today · drag to another day to move it"
-                  className="flex items-center gap-1.5 text-[0.72rem] cursor-grab active:cursor-grabbing"
-                >
-                  <button
-                    onClick={() => toggleTodo(t.id)}
-                    aria-label={`Complete ${t.text}`}
-                    className="w-2.5 h-2.5 rounded-full shrink-0 border"
-                    style={{
-                      borderColor: PRIORITY_DOT[t.priority],
-                      background: t.done ? PRIORITY_DOT[t.priority] : 'transparent',
-                    }}
-                  />
-                  <span
-                    className={`truncate ${
-                      t.done ? 'line-through text-[var(--color-ink-faint)]' : ''
-                    }`}
-                  >
-                    {t.text}
-                  </span>
-                </div>
-              ))}
-
-            {allDayDraft?.date === key ? (
-              <input
-                autoFocus
-                value={allDayDraft.text}
-                onChange={(e) => setAllDayDraft({ date: key, text: e.target.value })}
-                onBlur={() => {
-                  if (allDayDraft.text.trim())
-                    addScheduleItem(allDayDraft.text.trim(), key, undefined, 'task');
-                  setAllDayDraft(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur();
-                  if (e.key === 'Escape') setAllDayDraft(null);
-                }}
-                className="w-full bg-transparent text-[0.72rem] outline-none border-b border-[var(--color-accent)]"
-              />
-            ) : (
-              <button
-                onClick={() => setAllDayDraft({ date: key, text: '' })}
-                className="w-full text-left text-[0.7rem] text-[var(--color-ink-faint)] opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
-              >
-                + task
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* the hour grid */}
+      {/* the hour grid — the headers live inside the same scroller, because
+          a scrollbar narrows this box and would otherwise leave them wider */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="sticky top-0 z-30 bg-[var(--color-paper)]">
+        {/* day headers */}
+        <div className="shrink-0 flex border-b border-[var(--color-paper-line)]">
+          <div className="w-12 shrink-0" />
+          {days.map((d, i) => {
+            const isToday = isSameDay(d, parseISO(today));
+            return (
+              <div key={i} className="flex-1 min-w-0 px-1 pb-1.5 text-center">
+                <div className="label">{format(d, 'EEE')}</div>
+                <div
+                  className={`font-display text-lg leading-tight ${
+                    isToday ? 'text-[var(--color-accent)]' : ''
+                  }`}
+                >
+                  {format(d, 'd')}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* all-day strip */}
+        <div className="shrink-0 flex border-b border-[var(--color-paper-line)] min-h-[34px]">
+          <div className="w-12 shrink-0 label pt-1.5 pr-1 text-right">all day</div>
+          {dayKeys.map((key) => (
+            <div
+              key={key}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDropDay(key);
+              }}
+              onDragLeave={() => setDropDay((d) => (d === key ? null : d))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDropDay(null);
+                const id = e.dataTransfer.getData('text/todo');
+                if (id) updateTodo(id, { dueDate: key });
+              }}
+              className={`flex-1 min-w-0 border-l border-[var(--color-paper-line)]/60 p-1 space-y-1 transition-colors ${
+                dropDay === key ? 'bg-[var(--color-accent)]/10' : ''
+              }`}
+            >
+              {allDay
+                .filter((o) => o.date === key)
+                .map((o) => (
+                  <button
+                    key={`${o.item.id}@${o.date}`}
+                    onClick={() => toggleOccurrence(o.item.id, o.date)}
+                    onDoubleClick={() =>
+                      o.repeating ? skipOccurrence(o.item.id, o.date) : removeScheduleItem(o.item.id)
+                    }
+                    title={
+                      o.repeating
+                        ? `Repeats ${REPEAT_LABEL[o.item.repeat!]} · click to tick · double-click to skip this one`
+                        : 'Click to tick off · double-click to delete'
+                    }
+                    className={`block w-full text-left truncate text-[0.72rem] px-1.5 py-0.5 rounded-sm ${
+                      o.done ? 'line-through text-[var(--color-ink-faint)]' : ''
+                    }`}
+                    style={{
+                      background: `color-mix(in srgb, ${colourOf(o.item, subjects)} 20%, transparent)`,
+                    }}
+                  >
+                    {o.repeating && <span className="opacity-50 mr-0.5">↻</span>}
+                    {o.item.title}
+                  </button>
+                ))}
+              {dueTodos
+                .filter((t) => t.dueDate === key)
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/todo', t.id)}
+                    title="A to-do due today · drag to another day to move it"
+                    className="flex items-center gap-1.5 text-[0.72rem] cursor-grab active:cursor-grabbing"
+                  >
+                    <button
+                      onClick={() => toggleTodo(t.id)}
+                      aria-label={`Complete ${t.text}`}
+                      className="w-2.5 h-2.5 rounded-full shrink-0 border"
+                      style={{
+                        borderColor: PRIORITY_DOT[t.priority],
+                        background: t.done ? PRIORITY_DOT[t.priority] : 'transparent',
+                      }}
+                    />
+                    <span
+                      className={`truncate ${
+                        t.done ? 'line-through text-[var(--color-ink-faint)]' : ''
+                      }`}
+                    >
+                      {t.text}
+                    </span>
+                  </div>
+                ))}
+
+              {allDayDraft?.date === key ? (
+                <input
+                  autoFocus
+                  value={allDayDraft.text}
+                  onChange={(e) => setAllDayDraft({ date: key, text: e.target.value })}
+                  onBlur={() => {
+                    if (allDayDraft.text.trim())
+                      addScheduleItem(allDayDraft.text.trim(), key, undefined, 'task');
+                    setAllDayDraft(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                    if (e.key === 'Escape') setAllDayDraft(null);
+                  }}
+                  className="w-full bg-transparent text-[0.72rem] outline-none border-b border-[var(--color-accent)]"
+                />
+              ) : (
+                <button
+                  onClick={() => setAllDayDraft({ date: key, text: '' })}
+                  className="w-full text-left text-[0.7rem] text-[var(--color-ink-faint)] opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
+                >
+                  + task
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        </div>
+
         <div className="flex" style={{ height: (END_HOUR - START_HOUR) * HOUR_H }}>
           <div className="w-12 shrink-0 relative">
             {hours.map((h) => (
