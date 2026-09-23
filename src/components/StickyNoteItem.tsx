@@ -50,7 +50,7 @@ export default function StickyNoteItem({
         left: note.x,
         top: note.y,
         zIndex: note.z,
-        background: NOTE_COLORS[note.color],
+        background: `color-mix(in srgb, ${NOTE_COLORS[note.color]} var(--sticky-mix), var(--color-paper))`,
         transform: `rotate(${dragging ? 0 : note.rotation}deg)`,
         transition: dragging ? 'none' : 'transform 0.15s',
       }}
@@ -61,7 +61,7 @@ export default function StickyNoteItem({
           onPointerDown={onHandlePointerDown}
           onPointerMove={onHandlePointerMove}
           onPointerUp={onHandlePointerUp}
-          className="text-[var(--color-ink-soft)] text-xs cursor-grab active:cursor-grabbing px-2 py-2 -m-2"
+          className="text-[var(--color-ink)]/60 text-xs cursor-grab active:cursor-grabbing px-2 py-2 -m-2"
         >
           ⠿⠿
         </span>
@@ -71,14 +71,14 @@ export default function StickyNoteItem({
             onPointerDown={(e) => e.stopPropagation()}
             aria-label={mode === 'text' ? 'Switch to drawing' : 'Switch to text'}
             title={mode === 'text' ? 'Draw' : 'Write'}
-            className="font-note text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] leading-none px-1.5 py-1.5 -m-1.5"
+            className="font-note text-[10px] text-[var(--color-ink)]/60 hover:text-[var(--color-ink)] leading-none px-1.5 py-1.5 -m-1.5"
           >
             {mode === 'text' ? 'draw' : 'text'}
           </button>
           <button
             onClick={() => onRemove(note.id)}
             onPointerDown={(e) => e.stopPropagation()}
-            className="text-[var(--color-ink-soft)] hover:text-red-600 text-base leading-none px-1.5 py-1.5 -m-1.5"
+            className="text-[var(--color-ink)]/60 hover:text-[var(--color-accent)] text-base leading-none px-1.5 py-1.5 -m-1.5"
             aria-label="Delete note"
           >
             ×
@@ -108,7 +108,7 @@ export default function StickyNoteItem({
           onChange={(c) => onUpdate(note.id, { color: c })}
           label="Note color"
         />
-        <span className="font-note text-[10px] text-[var(--color-ink-soft)]">color</span>
+        <span className="font-note text-[10px] text-[var(--color-ink)]/60">color</span>
       </div>
     </div>
   );

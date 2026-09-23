@@ -283,7 +283,10 @@ export default function MindMap() {
                       className={`w-full h-full flex items-center gap-1.5 rounded-sm shadow px-2.5 overflow-hidden ${
                         isSelected ? 'ring-2 ring-offset-1 ring-[var(--color-ink)]' : ''
                       } ${isRoot ? 'border-2 font-bold' : 'border'}`}
-                      style={{ background: NOTE_COLORS[n.color], borderColor: 'var(--color-ink)' }}
+                      style={{
+                        background: `color-mix(in srgb, ${NOTE_COLORS[n.color]} var(--sticky-mix), var(--color-paper))`,
+                        borderColor: 'var(--color-ink)',
+                      }}
                     >
                       {editingId === n.id ? (
                         <input
