@@ -56,24 +56,12 @@ const pageTransition = {
 };
 
 const FRONT_WIDGET_META: Record<FrontWidgetKey, { label: string; icon: IconName }> = {
-  mood: { label: 'Mood check-in', icon: 'mood' },
-  schedule: { label: "Today's schedule", icon: 'schedule' },
-  todo: { label: 'To-do list', icon: 'todo' },
-  study: { label: 'Study minutes', icon: 'study' },
   write: { label: 'Notes', icon: 'notes' },
   notes: { label: 'Sticky board', icon: 'board' },
 };
 
-function renderFrontWidget(key: FrontWidgetKey, compact: boolean) {
+function renderFrontWidget(key: FrontWidgetKey, _compact: boolean) {
   switch (key) {
-    case 'mood':
-      return <MoodWidget compact={compact} />;
-    case 'schedule':
-      return <MiniSchedule />;
-    case 'todo':
-      return <MiniTodo />;
-    case 'study':
-      return <MiniStudy />;
     case 'write':
       return <MiniWrite />;
     case 'notes':
@@ -365,7 +353,7 @@ function FlipView({
       </div>
 
       {/* the divider tabs — every section visible at once, sorted by colour */}
-      <nav className="shrink-0 hidden md:flex flex-col gap-1.5 pt-12 w-[128px]">
+      <nav className="shrink-0 hidden md:flex flex-col gap-1 pt-9 w-[116px]">
         {FLIP_ORDER.map((p, i) => (
           <button
             key={p}
@@ -822,23 +810,6 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function MoodWidget({ compact }: { compact: boolean }) {
-  const journalEntries = useAppStore((s) => s.journalEntries);
-  const upsertJournalEntry = useAppStore((s) => s.upsertJournalEntry);
-  const today = todayStr();
-  const todayEntry = journalEntries.find((e) => e.date === today);
-
-  return (
-    <div className="flex gap-2">
-      <MoodPicker
-        value={todayEntry?.mood}
-        size={compact ? 'compact' : 'regular'}
-        onPick={(m) => upsertJournalEntry(today, m, todayEntry?.text ?? '')}
-      />
     </div>
   );
 }

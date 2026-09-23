@@ -22,7 +22,7 @@ function uid() {
 export type DeskPageKey = 'schedule' | 'study' | 'journal' | 'notes' | 'todo' | 'write';
 export type HomeViewMode = 'flip' | 'desk';
 export type Theme = 'light' | 'dark';
-export type FrontWidgetKey = 'mood' | 'schedule' | 'study' | 'notes' | 'todo' | 'write';
+export type FrontWidgetKey = 'notes' | 'write';
 
 type UndoSnapshot =
   | { kind: 'schedule'; item: ScheduleItem }
@@ -194,7 +194,7 @@ export const useAppStore = create<AppState>()(
       theme: 'light',
       setTheme: (theme) => set({ theme }),
 
-      frontPageWidgets: ['mood'],
+      frontPageWidgets: [],
       addFrontWidget: (key) =>
         set((s) =>
           s.frontPageWidgets.includes(key)
@@ -570,10 +570,19 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'alliswell-storage',
-      version: 3,
+      version: 4,
       partialize: ({ pendingUndo: _pendingUndo, ...rest }) => rest,
       // v0 kept board notes and write-page notes in two arrays and used pastel color names
       migrate: (persisted, version) => {
+        // the cover's Today view covers mood, schedule, to-dos and focus, so the
+        // widgets duplicating those are dropped; the other two are kept
+        const asV4 = (state: Record<string, unknown>) => ({
+          ...state,
+          frontPageWidgets: ((state.frontPageWidgets as string[]) ?? []).filter(
+            (k) => k === 'notes' || k === 'write'
+          ),
+        });
+
         // study to-dos were a second, parallel to-do list; fold them into the
         // real one, keeping their subject so nothing about them is lost
         const asV3 = (state: Record<string, unknown>) => {
@@ -604,10 +613,12 @@ export const useAppStore = create<AppState>()(
           return { ...state, notes, activeNoteId: notes[0]?.id ?? null };
         };
 
-        if (version >= 3) return persisted as AppState;
-        if (version === 2) return asV3(persisted as Record<string, unknown>) as unknown as AppState;
+        if (version >= 4) return persisted as AppState;
+        if (version === 3) return asV4(persisted as Record<string, unknown>) as unknown as AppState;
+        if (version === 2)
+          return asV4(asV3(persisted as Record<string, unknown>)) as unknown as AppState;
         if (version === 1)
-          return asV3(asV2(persisted as Record<string, unknown>)) as unknown as AppState;
+          return asV4(asV3(asV2(persisted as Record<string, unknown>))) as unknown as AppState;
         const old = persisted as Record<string, unknown>;
         const legacyColor: Record<string, NoteColor> = {
           yellow: 'ochre',
@@ -628,7 +639,7 @@ export const useAppStore = create<AppState>()(
           color: fix(n.color),
           page: 'write' as StickyPage,
         }));
-        return asV3(asV2({
+        return asV4(asV3(asV2({
           ...old,
           stickyNotes: [...board, ...write],
           writeStickyNotes: undefined,
@@ -637,7 +648,7 @@ export const useAppStore = create<AppState>()(
             ...n,
             color: fix(n.color),
           })),
-        })) as unknown as AppState;
+        }))) as unknown as AppState;
       },
     }
   )

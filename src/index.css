@@ -291,14 +291,15 @@ body {
   font-weight: 400;
   line-height: 1.1;
   text-align: left;
-  padding: 0.62rem 0.7rem 0.62rem 0.85rem;
-  border-radius: 0 4px 4px 0;
-  border: 1px solid transparent;
+  padding: 0.55rem 0.7rem 0.55rem 0.8rem;
+  border-radius: 0 3px 3px 0;
+  /* cut from the same sheet: same paper, same hairline, no left edge at all,
+     and pulled flush against the page so there is no gap to float in */
+  background: var(--color-paper);
+  border: 1px solid var(--color-paper-line);
   border-left: none;
   color: var(--color-ink-soft);
-  background: color-mix(in srgb, var(--color-accent) 9%, var(--color-paper));
-  border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  transform: translateX(-6px);
+  transform: translateX(-1px);
   transition:
     transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.24s ease,
@@ -310,24 +311,26 @@ body {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 2px;
   background: var(--color-accent);
-  opacity: 0.35;
+  opacity: 0.25;
+  transition: opacity 0.24s ease;
 }
 .divider-tab:hover {
-  transform: translateX(-2px);
+  transform: translateX(3px);
   color: var(--color-ink);
 }
 .divider-tab[data-active='true'] {
-  transform: translateX(6px);
+  transform: translateX(9px);
   color: var(--color-ink);
-  background: color-mix(in srgb, var(--color-accent) 26%, var(--color-paper));
-  border-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
-  box-shadow: 0 6px 16px -12px rgba(38, 35, 29, 0.6);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-paper));
+  border-color: color-mix(in srgb, var(--color-accent) 32%, transparent);
 }
 .divider-tab[data-active='true']::before {
   opacity: 1;
+  width: 3px;
 }
+
 
 /* The tick is drawn on, not faded in — that stroke is the satisfying part. */
 @keyframes draw-tick {
