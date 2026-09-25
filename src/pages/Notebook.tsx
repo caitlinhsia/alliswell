@@ -9,6 +9,7 @@ import AccountMenu from '../components/AccountMenu';
 import TodayPanel from '../components/TodayPanel';
 import MoodPicker from '../components/MoodPicker';
 import SearchPalette from '../components/SearchPalette';
+import { expandSchedule } from '../lib/recurrence';
 import { useMedia } from '../lib/useMedia';
 import FoldOutSpread, { FoldPane } from '../components/FoldOutSpread';
 import ScheduleContent from './ScheduleContent';
@@ -756,7 +757,7 @@ function FrontPage({ compact = false }: { compact?: boolean }) {
                 <button
                   onClick={() => removeFrontWidget(key)}
                   aria-label={`Remove ${FRONT_WIDGET_META[key].label}`}
-                  className="label opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity"
+                  className="action on-hover"
                 >
                   remove
                 </button>
@@ -818,12 +819,13 @@ function MiniSchedule() {
   const today = todayStr();
   const schedule = useAppStore((s) => s.schedule);
   const addScheduleItem = useAppStore((s) => s.addScheduleItem);
-  const toggleScheduleItem = useAppStore((s) => s.toggleScheduleItem);
+  const toggleOccurrence = useAppStore((s) => s.toggleOccurrence);
   const [title, setTitle] = useState('');
 
-  const items = schedule
-    .filter((i) => i.date === today)
-    .sort((a, b) => (a.time ?? '99:99').localeCompare(b.time ?? '99:99'));
+  // expanded, so a weekly seminar appears here on every one of its days
+  const items = expandSchedule(schedule, [today]).sort((a, b) =>
+    (a.item.time ?? '99:99').localeCompare(b.item.time ?? '99:99')
+  );
 
   return (
     <div>
@@ -831,16 +833,16 @@ function MiniSchedule() {
         <p className="font-note text-sm text-[var(--color-ink-soft)] mb-2">Nothing planned today.</p>
       ) : (
         <ul className="space-y-1.5 mb-2 max-h-40 overflow-y-auto">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 font-note text-sm">
+          {items.map((o) => (
+            <li key={o.item.id} className="flex items-center gap-2 font-note text-sm">
               <input
                 type="checkbox"
-                checked={item.done}
-                onChange={() => toggleScheduleItem(item.id)}
+                checked={o.done}
+                onChange={() => toggleOccurrence(o.item.id, o.date)}
                 className="accent-[var(--color-accent)] w-4 h-4"
               />
-              <span className={item.done ? 'line-through text-[var(--color-ink-soft)]' : ''}>
-                {item.title}
+              <span className={o.done ? 'line-through text-[var(--color-ink-soft)]' : ''}>
+                {o.item.title}
               </span>
             </li>
           ))}

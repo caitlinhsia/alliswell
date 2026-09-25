@@ -346,7 +346,7 @@ export default function StudyContent() {
                 )}
                 <button
                   onClick={() => removeTodo(t.id)}
-                  className="label opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--color-accent)] transition-opacity shrink-0"
+                  className="action on-hover shrink-0"
                 >
                   delete
                 </button>

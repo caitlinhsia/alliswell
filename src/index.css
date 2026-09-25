@@ -362,6 +362,35 @@ body {
   }
 }
 
+/* Secondary controls that fade in on hover. A touch screen has no hover, so
+   there they stay dimly visible rather than invisible-but-still-tappable. */
+.on-hover {
+  opacity: 0.45;
+  transition: opacity 0.18s ease;
+}
+@media (hover: hover) {
+  .on-hover {
+    opacity: 0;
+  }
+}
+.group:hover .on-hover,
+.on-hover:focus-visible,
+.on-hover:hover {
+  opacity: 1;
+}
+
+/* Small text actions — delete, clear, remove. Not the mono caps label: these
+   are things you click, and at 8px all-caps they were barely readable. */
+.action {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--color-ink-soft);
+  transition: color 0.18s ease;
+}
+.action:hover {
+  color: var(--color-accent);
+}
+
 .font-mono-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

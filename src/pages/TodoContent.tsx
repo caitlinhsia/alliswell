@@ -223,7 +223,7 @@ export default function TodoContent() {
               {showDone && (
                 <button
                   onClick={clearCompleted}
-                  className="label hover:text-[var(--color-accent)] transition-colors"
+                  className="action"
                 >
                   clear
                 </button>
@@ -255,7 +255,7 @@ export default function TodoContent() {
                     )}
                     <button
                       onClick={() => removeTodo(t.id)}
-                      className="label opacity-0 group-hover:opacity-100 hover:text-[var(--color-accent)] transition-opacity shrink-0"
+                      className="action on-hover shrink-0"
                     >
                       delete
                     </button>
@@ -416,7 +416,7 @@ function TaskRow({
                 ? 'border-[var(--color-note-rust)] text-[var(--color-note-rust)]'
                 : t.dueDate
                 ? 'border-[var(--color-paper-line)] text-[var(--color-ink-soft)]'
-                : 'border-dashed border-[var(--color-paper-line)] text-[var(--color-ink-faint)] opacity-0 group-hover:opacity-100'
+                : 'border-dashed border-[var(--color-paper-line)] text-[var(--color-ink-faint)] on-hover'
             }`}
             display={t.dueDate ? dueLabel(t.dueDate, today) : undefined}
           />
@@ -424,14 +424,14 @@ function TaskRow({
             onClick={onToggleOpen}
             title="Description"
             className={`label transition-opacity ${
-              t.description || open ? '' : 'opacity-0 group-hover:opacity-100'
+              t.description || open ? '' : 'on-hover'
             } hover:text-[var(--color-ink)]`}
           >
             note
           </button>
           <button
             onClick={onRemove}
-            className="label opacity-0 group-hover:opacity-100 hover:text-[var(--color-accent)] transition-opacity"
+            className="action on-hover"
           >
             delete
           </button>

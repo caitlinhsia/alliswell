@@ -267,7 +267,7 @@ function NoteRow({
           className={`text-[0.7rem] shrink-0 transition-opacity ${
             note.pinned
               ? 'text-[var(--color-accent)]'
-              : 'opacity-0 group-hover:opacity-100 text-[var(--color-ink-faint)]'
+              : 'on-hover text-[var(--color-ink-faint)]'
           }`}
         >
           ●
@@ -285,7 +285,7 @@ function NoteRow({
             e.stopPropagation();
             onRemove();
           }}
-          className="label opacity-0 group-hover:opacity-100 hover:text-[var(--color-accent)] transition-opacity shrink-0"
+          className="action on-hover shrink-0"
         >
           del
         </button>

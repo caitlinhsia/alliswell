@@ -314,7 +314,16 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           schedule: s.schedule.map((item) =>
             item.id === id
-              ? { ...item, repeat, ...(repeat ? {} : { doneDates: undefined, skipDates: undefined }) }
+              ? {
+                  ...item,
+                  repeat,
+                  // the two ways of recording "done" do not translate, so
+                  // changing which one applies starts it over rather than
+                  // resurrecting a tick from the other mode
+                  done: false,
+                  doneDates: repeat ? [] : undefined,
+                  skipDates: repeat ? item.skipDates : undefined,
+                }
               : item
           ),
         })),

@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
+import {
+  addDays,
+  differenceInCalendarDays,
+  format,
+  isSameDay,
+  parseISO,
+  startOfWeek,
+} from 'date-fns';
 import { useAppStore } from '../store/useAppStore';
 import { todayStr } from '../lib/date';
 import { useMedia } from '../lib/useMedia';
@@ -41,6 +48,8 @@ type Drag = {
   id: string;
   mode: 'move' | 'resize';
   grabMin: number; // where in the event the pointer took hold
+  /** The occurrence the drag started on; the preview follows this one. */
+  originDate: string;
   startMin: number;
   len: number;
   date: string;
@@ -64,6 +73,9 @@ export default function ScheduleContent() {
   const narrow = useMedia('(max-width: 767px)');
   const span = narrow ? 1 : 7;
   const [weekOffset, setWeekOffset] = useState(0);
+  useEffect(() => {
+    setWeekOffset(0);
+  }, [narrow]);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [allDayDraft, setAllDayDraft] = useState<{ date: string; text: string } | null>(null);
@@ -118,19 +130,19 @@ export default function ScheduleContent() {
     e.stopPropagation();
     const slot = pointToSlot(e);
     if (!slot || !item.time) return;
-    void occurrenceDate;
     const d: Drag = {
       id: item.id,
       mode,
       grabMin: slot.min - toMin(item.time),
+      originDate: occurrenceDate,
       startMin: toMin(item.time),
       len: lengthOf(item),
-      date: item.date,
+      date: occurrenceDate,
       moved: false,
     };
     dragRef.current = d;
     setDrag(d);
-    setSelectedId(item.id);
+    setSelectedId(`${item.id}@${occurrenceDate}`);
   }
 
   // dragging is tracked on the window so the pointer can leave the grid
@@ -164,8 +176,14 @@ export default function ScheduleContent() {
     function onUp() {
       const d = dragRef.current;
       if (d?.moved) {
+        const item = useAppStore.getState().schedule.find((x) => x.id === d.id);
+        const shiftDays = differenceInCalendarDays(parseISO(d.date), parseISO(d.originDate));
+        const date =
+          item?.repeat && shiftDays !== 0
+            ? format(addDays(parseISO(item.date), shiftDays), 'yyyy-MM-dd')
+            : d.date;
         updateScheduleItem(d.id, {
-          date: d.date,
+          date,
           time: toHHMM(d.startMin),
           endTime: toHHMM(d.startMin + d.len),
         });
@@ -224,7 +242,7 @@ export default function ScheduleContent() {
       {/* the hour grid — the headers live inside the same scroller, because
           a scrollbar narrows this box and would otherwise leave them wider */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-        <div className="sticky top-0 z-30 bg-[var(--color-paper)]">
+        <div className="sticky top-0 z-[70] bg-[var(--color-paper)]">
         {/* day headers */}
         <div className="shrink-0 flex border-b border-[var(--color-paper-line)]">
           <div className="w-12 shrink-0" />
@@ -391,7 +409,7 @@ export default function ScheduleContent() {
 
             {timed.map((o) => {
               const item = o.item;
-              const live = drag?.id === item.id && drag.date === o.date ? drag : null;
+              const live = drag?.id === item.id && drag.originDate === o.date ? drag : null;
               const date = live?.date ?? o.date;
               const startMin = live?.startMin ?? toMin(item.time!);
               const len = live?.len ?? lengthOf(item);
@@ -413,8 +431,8 @@ export default function ScheduleContent() {
                   startMin={startMin}
                   len={len}
                   dragging={!!live}
-                  selected={selectedId === item.id}
-                  onSelect={() => setSelectedId(item.id)}
+                  selected={selectedId === `${item.id}@${o.date}`}
+                  onSelect={() => setSelectedId(`${item.id}@${o.date}`)}
                   onGrab={(e, mode) => beginDrag(e, item, mode, o.date)}
                   onRename={(title) => updateScheduleItem(item.id, { title })}
                   onRemove={() =>
@@ -681,7 +699,7 @@ function EventControls({
             e.stopPropagation();
             onRemoveSeries();
           }}
-          className="label hover:text-[var(--color-accent)] transition-colors"
+          className="action"
           title={`Removes every occurrence, not just ${occurrenceDate}`}
         >
           delete the whole series

@@ -91,23 +91,36 @@ export function searchEverything(state: AppState, rawQuery: string, limit = 24):
   }
 
   for (const e of state.journalEntries) {
+    const shown = format(parseISO(e.date), 'd MMM yyyy');
     push(
       {
         id: e.id,
         page: 'journal',
         group: 'Journal',
-        title: format(parseISO(e.date), 'd MMM yyyy'),
+        title: shown,
         detail: excerpt(e.text, query) ?? e.text.slice(0, 80),
       },
-      score(query, e.date, e.text)
+      // searchable by what the row shows as well as by the stored ISO date
+      Math.max(score(query, shown, e.text), score(query, e.date))
     );
   }
 
+  // a sticky can live on any page, so send the hit to the page it is actually on
+  const STICKY_PAGE: Record<string, SearchPage> = {
+    board: 'notes',
+    write: 'write',
+    mindmap: 'write',
+    schedule: 'schedule',
+    todo: 'todo',
+    study: 'study',
+    journal: 'journal',
+  };
   for (const n of state.stickyNotes) {
     push(
       {
         id: n.id,
-        page: n.page === 'write' ? 'write' : 'notes',
+        // a note on the cover has no page of its own to open
+        page: STICKY_PAGE[n.page] ?? 'notes',
         group: 'Sticky',
         title: n.text.slice(0, 60) || '(empty)',
       },

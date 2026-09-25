@@ -91,7 +91,7 @@ export default function TodayPanel() {
     if (a.time && b.time) return minutesOf(a.time) - minutesOf(b.time);
     if (a.time) return -1;
     if (b.time) return 1;
-    return Number(a.overdue) < Number(b.overdue) ? 1 : -1;
+    return Number(!!b.overdue) - Number(!!a.overdue); // overdue first
   });
 
   const nextUp = rows.find((r) => r.time && !r.done && minutesOf(r.time) >= nowMin);
