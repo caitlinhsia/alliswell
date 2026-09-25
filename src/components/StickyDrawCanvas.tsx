@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 
 type Tool = 'pen' | 'rect' | 'circle' | 'line';
 
+/* Drawings are stored as a raster, so their ink cannot follow the theme after
+   the fact. The pad therefore keeps a light surface in both themes — a scrap
+   of paper stuck to the note — and the pens stay dark against it. */
+const PAD_SURFACE = 'rgba(253, 250, 241, 0.94)';
 const COLORS = ['#33291f', '#a8524c', '#4c72a0', '#4c7a52'];
 const W = 208;
 const H = 132;
@@ -113,8 +117,8 @@ export default function StickyDrawCanvas({
         onPointerMove={handleMove}
         onPointerUp={handleUp}
         onPointerLeave={handleUp}
-        className="bg-[var(--color-paper)]/60 rounded-md touch-none cursor-crosshair w-full"
-        style={{ height: H }}
+        className="rounded-md touch-none cursor-crosshair w-full"
+        style={{ height: H, background: PAD_SURFACE }}
       />
       <div className="flex items-center justify-between mt-1.5 gap-1">
         <div className="flex gap-0.5">
@@ -146,7 +150,7 @@ export default function StickyDrawCanvas({
           ))}
           <button
             onClick={clear}
-            className="text-[10px] font-note text-[var(--color-ink-soft)] hover:text-red-500 px-1.5 py-1 -m-1 ml-0.5"
+            className="text-[10px] font-note text-[var(--color-ink)]/60 hover:text-[var(--color-ink)] px-1.5 py-1 -m-1 ml-0.5"
           >
             clear
           </button>

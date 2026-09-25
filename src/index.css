@@ -80,12 +80,11 @@
   --color-tab-butter: #c2a367;
   --color-tab-lavender: #9b90ab;
 
-  /* How much of a note's colour survives when it becomes a surface. In light
-     a sticky is the colour itself; on a dark page that same pastel is a glaring
-     slab, so there it becomes a tint of the dark paper instead. The colours
-     themselves are unchanged — as dots, rings and bars they still want to be
-     bright against the dark. */
-  --sticky-mix: 82%;
+  /* How much of a note's colour survives when it becomes a surface you write
+     on. Kept under full strength even in light, so the deepest colours stay
+     light enough for ink to clear AA. The colours themselves are unchanged —
+     as dots, rings and bars they still want their full strength. */
+  --sticky-mix: 72%;
 
   --color-note-ochre: #cfb473;
   --color-note-clay: #c08768;
@@ -114,8 +113,10 @@
   --color-accent: #d38a5c;
   --color-accent-soft: #3a2a1f;
 
-  /* Dark is stepped again from scratch, not flipped: on a dark ground the
-     midpoint has to be the light one for the ramp to read. */
+  /* The mood ramp is stepped again from scratch, not flipped: on a dark ground
+     the midpoint has to be the light one for the ramp to read. */
+  /* The same knob, turned right down: on a dark page a note is a tint of the
+     paper rather than the colour itself. */
   --sticky-mix: 26%;
 
   --mood-great: #688a5c;

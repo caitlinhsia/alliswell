@@ -78,7 +78,7 @@ export default function StickyNoteItem({
           <button
             onClick={() => onRemove(note.id)}
             onPointerDown={(e) => e.stopPropagation()}
-            className="text-[var(--color-ink)]/60 hover:text-[var(--color-accent)] text-base leading-none px-1.5 py-1.5 -m-1.5"
+            className="text-[var(--color-ink)]/60 hover:text-[var(--color-ink)] text-base leading-none px-1.5 py-1.5 -m-1.5"
             aria-label="Delete note"
           >
             ×
