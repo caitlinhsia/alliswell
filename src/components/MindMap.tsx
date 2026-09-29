@@ -24,7 +24,7 @@ export default function MindMap() {
   const journalEntries = useAppStore((s) => s.journalEntries);
   const stickyNotes = useAppStore((s) => s.stickyNotes);
   const todos = useAppStore((s) => s.todos);
-  const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
+  const notes = useAppStore((s) => s.notes);
 
   // everything already written elsewhere in the notebook, offered for reuse here
   const library = useMemo(() => {
@@ -33,8 +33,9 @@ export default function MindMap() {
 
     const groups: { label: string; items: string[] }[] = [];
 
-    const notes = stickyNotes.map((n) => n.text).filter((t) => t.trim());
-    if (notes.length) groups.push({ label: 'sticky notes', items: notes.map((t) => trim(t)) });
+    const stickyText = stickyNotes.map((n) => n.text).filter((t) => t.trim());
+    if (stickyText.length)
+      groups.push({ label: 'sticky notes', items: stickyText.map((t) => trim(t)) });
 
     const open = todos.filter((t) => !t.done).map((t) => t.text);
     if (open.length) groups.push({ label: 'to-dos', items: open.map((t) => trim(t)) });
@@ -46,17 +47,19 @@ export default function MindMap() {
       .filter(Boolean);
     if (entries.length) groups.push({ label: 'journal', items: entries });
 
-    const lines = writeNoteHtml
+    const lines = notes
+      .map((n) => n.html)
+      .join('\n')
       .replace(/<(li|div|p|br)[^>]*>/gi, '\n')
       .replace(/<[^>]+>/g, '')
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l.length > 1)
       .slice(0, 10);
-    if (lines.length) groups.push({ label: 'notes page', items: lines.map((l) => trim(l)) });
+    if (lines.length) groups.push({ label: 'notes', items: lines.map((l) => trim(l)) });
 
     return groups;
-  }, [stickyNotes, todos, journalEntries, writeNoteHtml]);
+  }, [stickyNotes, todos, journalEntries, notes]);
 
   const panRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
   const dragNodeRef = useRef<{

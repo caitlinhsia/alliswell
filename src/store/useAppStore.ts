@@ -30,7 +30,7 @@ type UndoSnapshot =
   | { kind: 'note'; item: Note }
   | { kind: 'todos'; items: TodoItem[] }
   | { kind: 'occurrence'; id: string; date: string }
-  | { kind: 'subject'; item: Subject; todos: TodoItem[]; sessions: StudySession[] }
+  | { kind: 'subject'; item: Subject; todoIds: string[]; sessions: StudySession[] }
   | { kind: 'sticky'; item: StickyNote }
   | { kind: 'mindMap'; items: MindMapNode[] }
   | { kind: 'journal'; item: JournalEntry };
@@ -172,7 +172,9 @@ export const useAppStore = create<AppState>()(
             case 'subject':
               return {
                 subjects: [...state.subjects, s.item],
-                todos: [...state.todos, ...s.todos],
+                todos: state.todos.map((t) =>
+                  s.todoIds.includes(t.id) ? { ...t, subjectId: s.item.id } : t
+                ),
                 studySessions: [...state.studySessions, ...s.sessions],
                 pendingUndo: null,
               };
@@ -396,7 +398,7 @@ export const useAppStore = create<AppState>()(
       removeSubject: (id) =>
         set((s) => {
           const item = s.subjects.find((sub) => sub.id === id);
-          const todos = s.todos.filter((t) => t.subjectId === id);
+          const todoIds = s.todos.filter((t) => t.subjectId === id).map((t) => t.id);
           const sessions = s.studySessions.filter((sess) => sess.subjectId === id);
           return {
             subjects: s.subjects.filter((sub) => sub.id !== id),
@@ -405,7 +407,7 @@ export const useAppStore = create<AppState>()(
             studySessions: s.studySessions.filter((sess) => sess.subjectId !== id),
             pendingUndo: item
               ? {
-                  snapshot: { kind: 'subject', item, todos, sessions },
+                  snapshot: { kind: 'subject', item, todoIds, sessions },
                   label: `Deleted subject "${item.name}"`,
                   at: Date.now(),
                 }
@@ -625,7 +627,9 @@ export const useAppStore = create<AppState>()(
         if (version >= 4) return persisted as AppState;
         if (version === 3) return asV4(persisted as Record<string, unknown>) as unknown as AppState;
         if (version === 2)
-          return asV4(asV3(persisted as Record<string, unknown>)) as unknown as AppState;
+          // v2 existed both before and after `notes`; asV2 no-ops on the later
+          // shape, so running it covers the earlier one without harming either
+          return asV4(asV3(asV2(persisted as Record<string, unknown>))) as unknown as AppState;
         if (version === 1)
           return asV4(asV3(asV2(persisted as Record<string, unknown>))) as unknown as AppState;
         const old = persisted as Record<string, unknown>;

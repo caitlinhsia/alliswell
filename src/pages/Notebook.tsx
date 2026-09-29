@@ -454,6 +454,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragRef = useRef<{ key: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const dragMovedRef = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const openKeys = new Set(deskGroups.flat());
@@ -471,6 +472,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const p = posOf(key, i);
     dragRef.current = { key, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y };
+    dragMovedRef.current = false;
     setDraggingKey(key);
     bringToFront(key, p);
   }
@@ -478,6 +480,9 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   function onMove(e: React.PointerEvent) {
     const d = dragRef.current;
     if (!d) return;
+    if (Math.abs(e.clientX - d.sx) > 4 || Math.abs(e.clientY - d.sy) > 4) {
+      dragMovedRef.current = true;
+    }
     setDeskPos(d.key, {
       x: Math.max(0, d.ox + (e.clientX - d.sx)),
       y: Math.max(0, d.oy + (e.clientY - d.sy)),
@@ -497,7 +502,8 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
 
   function endDrag(e?: React.PointerEvent) {
     const d = dragRef.current;
-    if (d && e) {
+    // a click is not a drag: only a real move may fold two pages together
+    if (d && e && dragMovedRef.current) {
       const over = cardUnder(e.clientX, e.clientY, d.key);
       const dragged = cards.find((c) => c.key === d.key);
       const target = cards.find((c) => c.key === over);
@@ -507,6 +513,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
       }
     }
     dragRef.current = null;
+    dragMovedRef.current = false;
     setDraggingKey(null);
     setDropTarget(null);
   }
@@ -990,13 +997,16 @@ function MiniJournal() {
 }
 
 function MiniWrite() {
-  const writeNoteHtml = useAppStore((s) => s.writeNoteHtml);
+  const notes = useAppStore((s) => s.notes);
   const stickyNotes = useAppStore((s) => s.stickyNotes);
   const mindMapNodes = useAppStore((s) => s.mindMapNodes);
   const writeStickyNotes = stickyNotes.filter((n) => n.page === 'write');
 
-  const preview = writeNoteHtml
+  // the most recently touched note, since there is no single write page now
+  const latest = [...notes].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  const preview = (latest?.html ?? '')
     .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 90);

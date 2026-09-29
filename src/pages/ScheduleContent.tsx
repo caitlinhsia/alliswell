@@ -20,7 +20,7 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low: 'var(--color-note-sage)',
 };
 
-const START_HOUR = 6;
+const START_HOUR = 0;
 const END_HOUR = 24;
 const HOUR_H = 52; // px per hour
 const SNAP = 15; // minutes
@@ -100,7 +100,9 @@ export default function ScheduleContent() {
 
   // open on the working day rather than at 6am
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_H;
+    // the day runs midnight to midnight so nothing can fall off the top; open
+    // on the working day rather than making you scroll down to it
+    if (scrollRef.current) scrollRef.current.scrollTop = (7.5 - START_HOUR) * HOUR_H;
   }, []);
 
   const occurrences = expandSchedule(schedule, dayKeys);
@@ -110,7 +112,7 @@ export default function ScheduleContent() {
   const dueTodos = todos.filter((t) => t.dueDate && dayKeys.includes(t.dueDate));
 
   /** Which day column and minute the pointer is over. */
-  function pointToSlot(e: PointerEvent | React.PointerEvent) {
+  function pointToSlot(e: { clientX: number; clientY: number }) {
     const grid = gridRef.current;
     if (!grid) return null;
     const r = grid.getBoundingClientRect();
@@ -204,8 +206,12 @@ export default function ScheduleContent() {
   }, [drag?.id, drag?.mode]);
 
   /** Click an empty slot to drop an hour-long event there. */
-  function createAt(e: React.PointerEvent) {
+  function createAt(e: React.MouseEvent) {
     if (drag) return;
+    if (e.button !== 0) return; // not a right-click
+    // clicks that came from an event, its controls or a rename box are not
+    // clicks on empty grid
+    if ((e.target as HTMLElement).closest('[data-event]')) return;
     const slot = pointToSlot(e);
     if (!slot) return;
     const start = snap(slot.min);
@@ -382,7 +388,7 @@ export default function ScheduleContent() {
 
           <div
             ref={gridRef}
-            onPointerDown={createAt}
+            onClick={createAt}
             className="relative flex-1 min-w-0 cursor-crosshair"
           >
             {/* hour lines */}
@@ -531,6 +537,7 @@ function Event({
 
   return (
     <div
+      data-event
       className="absolute px-[3px] touch-none"
       style={{
         left: `${(col / span) * 100}%`,

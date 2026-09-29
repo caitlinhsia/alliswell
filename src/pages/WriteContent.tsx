@@ -37,6 +37,7 @@ export default function WriteContent() {
   const editorRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const saveTimeout = useRef<number | null>(null);
+  const pendingRef = useRef<{ id: string; html: string } | null>(null);
   const [justSaved, setJustSaved] = useState(false);
 
   const sorted = useMemo(
@@ -59,14 +60,32 @@ export default function WriteContent() {
   // the editor owns its DOM while a note is open, so only load on a note change
   useEffect(() => {
     if (editorRef.current) editorRef.current.innerHTML = active?.html ?? '';
+    return () => {
+      // commit anything still pending before the editor is handed to another
+      // note — cancelling here would throw away the last half-second of typing
+      if (saveTimeout.current) {
+        window.clearTimeout(saveTimeout.current);
+        saveTimeout.current = null;
+      }
+      const p = pendingRef.current;
+      if (p) {
+        updateNote(p.id, { html: p.html });
+        pendingRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
   function scheduleSave() {
     if (!active) return;
     if (saveTimeout.current) window.clearTimeout(saveTimeout.current);
-    const id = active.id;
+    // capture both the note and its text now; reading the editor when the timer
+    // fires would pick up whichever note is open by then
+    pendingRef.current = { id: active.id, html: editorRef.current?.innerHTML ?? '' };
     saveTimeout.current = window.setTimeout(() => {
-      if (editorRef.current) updateNote(id, { html: editorRef.current.innerHTML });
+      const p = pendingRef.current;
+      if (p) updateNote(p.id, { html: p.html });
+      pendingRef.current = null;
       setJustSaved(true);
       window.setTimeout(() => setJustSaved(false), 1200);
     }, 500);

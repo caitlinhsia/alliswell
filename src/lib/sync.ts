@@ -29,7 +29,7 @@ export function isSubstantial(data: NotebookData | null): boolean {
     'stickyNotes',
     'mindMapNodes',
     'studySessions',
-    'studyTodos',
+    'notes',
   ];
   const anyList = listKeys.some((k) => Array.isArray(data[k]) && (data[k] as unknown[]).length > 0);
   const anyText = typeof data.writeNoteHtml === 'string' && data.writeNoteHtml.trim().length > 0;
