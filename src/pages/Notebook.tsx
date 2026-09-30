@@ -447,6 +447,7 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   const setDeskSize = useAppStore((s) => s.setDeskSize);
   const deskLayout = useAppStore((s) => s.deskLayout);
   const setDeskPos = useAppStore((s) => s.setDeskPos);
+  const seedDeskLayout = useAppStore((s) => s.seedDeskLayout);
   const bringToFront = useAppStore((s) => s.bringDeskCardToFront);
   const mergeDeskPage = useAppStore((s) => s.mergeDeskPage);
 
@@ -466,6 +467,12 @@ function DeskView({ onOpenFull }: { onOpenFull: (key: DeskPageKey) => void }) {
   function posOf(key: string, i: number) {
     return deskLayout[key] ?? defaultPos(i);
   }
+
+  // every card gets a real position once, so depth comparisons see all of them
+  useEffect(() => {
+    seedDeskLayout(cards.map((c, i) => [c.key, defaultPos(i)]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards.length]);
 
   function startDrag(e: React.PointerEvent, key: string, i: number) {
     e.preventDefault();

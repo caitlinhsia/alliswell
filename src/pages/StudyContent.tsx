@@ -36,7 +36,8 @@ export default function StudyContent() {
   const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!activeSubjectId && subjects.length > 0) setActiveSubjectId(subjects[0].id);
+    const stillThere = subjects.some((s) => s.id === activeSubjectId);
+    if (!stillThere) setActiveSubjectId(subjects[0]?.id ?? '');
   }, [subjects, activeSubjectId]);
 
   useEffect(() => {
@@ -46,21 +47,25 @@ export default function StudyContent() {
         setElapsed((e) => e + 1);
         return;
       }
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          window.clearInterval(intervalRef.current!);
-          setRunning(false);
-          if (activeSubjectId) logStudySession(activeSubjectId, duration);
-          return duration * 60;
-        }
-        return s - 1;
-      });
+      // the updater must stay pure: React can call it more than once, and side
+      // effects in here logged a finished block twice
+      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
     return () => {
       if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, mode]);
+
+  // finishing is a consequence of the clock reaching zero, handled once, outside
+  // the updater
+  useEffect(() => {
+    if (mode !== 'countdown' || !running || secondsLeft > 0) return;
+    setRunning(false);
+    if (activeSubjectId) logStudySession(activeSubjectId, duration);
+    setSecondsLeft(duration * 60);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondsLeft, running, mode]);
 
   function resetTimer(mins: number) {
     setRunning(false);

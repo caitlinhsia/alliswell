@@ -194,7 +194,8 @@ export default function WriteContent() {
                 <ToolBtn
                   label="H"
                   title="Highlight"
-                  onClick={() => exec('hiliteColor', 'var(--color-note-ochre)')}
+                  // execCommand cannot read CSS variables, so this has to be a literal
+                  onClick={() => exec('hiliteColor', '#e8d9a8')}
                   className="bg-[var(--color-note-ochre)]/45"
                 />
                 <ToolBtn label="•⁠—" title="Bullet list" onClick={() => exec('insertUnorderedList')} />

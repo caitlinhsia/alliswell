@@ -62,6 +62,7 @@ export default function MindMap() {
   }, [stickyNotes, todos, journalEntries, notes]);
 
   const panRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
+  const justDraggedRef = useRef(false);
   const dragNodeRef = useRef<{
     id: string;
     startX: number;
@@ -159,6 +160,7 @@ export default function MindMap() {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setSelectedId(n.id);
+    justDraggedRef.current = false;
     dragNodeRef.current = {
       id: n.id,
       startX: e.clientX,
@@ -192,7 +194,9 @@ export default function MindMap() {
     }
     if (dragNodeRef.current) {
       const d = dragNodeRef.current;
-      d.moved = true;
+      if (Math.abs(e.clientX - d.startX) > 3 || Math.abs(e.clientY - d.startY) > 3) {
+        d.moved = true;
+      }
       updateNode(d.id, {
         x: d.nodeX + (e.clientX - d.startX) / zoom,
         y: d.nodeY + (e.clientY - d.startY) / zoom,
@@ -206,6 +210,9 @@ export default function MindMap() {
   }
 
   function handlePointerUp() {
+    // remember it past the ref being cleared: the click that follows needs to
+    // know whether this was a drag or a plain click
+    justDraggedRef.current = !!dragNodeRef.current?.moved;
     dragNodeRef.current = null;
     panRef.current = null;
     resizeRef.current = null;
@@ -281,6 +288,11 @@ export default function MindMap() {
                       transform: 'translate(-50%, -50%)',
                     }}
                     onPointerDown={(e) => handleNodePointerDown(e, n)}
+                    onClick={() => {
+                      if (justDraggedRef.current || editingId === n.id) return;
+                      setEditingId(n.id);
+                      setEditText(n.text);
+                    }}
                   >
                     <div
                       className={`w-full h-full flex items-center gap-1.5 rounded-sm shadow px-2.5 overflow-hidden ${
@@ -307,11 +319,6 @@ export default function MindMap() {
                         />
                       ) : (
                         <span
-                          onClick={() => {
-                            if (dragNodeRef.current?.moved) return;
-                            setEditingId(n.id);
-                            setEditText(n.text);
-                          }}
                           title="Click to rename"
                           className={`flex-1 min-w-0 truncate cursor-text font-note ${
                             isRoot ? 'text-base' : 'text-sm'

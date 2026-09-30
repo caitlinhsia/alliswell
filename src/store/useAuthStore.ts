@@ -212,7 +212,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (choice === 'cloud') {
       applyState(c.cloud);
     } else {
-      await pushNotebook(userId, c.local).catch(() => {});
+      try {
+        await pushNotebook(userId, c.local);
+      } catch (e) {
+        // recording this as reconciled would make the next sign-in believe the
+        // cloud copy was the newer one and quietly overwrite the kept notebook
+        set({
+          status: 'error',
+          error: e instanceof Error ? friendly(e.message) : 'Could not save to your account',
+        });
+        return;
+      }
     }
     rememberSynced(userId, kept);
     startWatching(set, get);

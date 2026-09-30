@@ -82,7 +82,9 @@ export function parseTodoInput(raw: string, now = new Date()): ParsedTodo {
     if (!priority) {
       // bare !, !!, !!!
       if (/^!{1,3}$/.test(w)) {
-        priority = w.length === 1 ? 'high' : w.length === 2 ? 'medium' : 'low';
+        // more bangs, more urgent — it read the other way round, so "!!!" was
+        // filed as the lowest priority
+        priority = w.length === 3 ? 'high' : w.length === 2 ? 'medium' : 'low';
         matched.push(`${priority} priority`);
         consumed.add(i);
         continue;

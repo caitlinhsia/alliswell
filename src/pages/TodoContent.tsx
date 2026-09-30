@@ -49,6 +49,9 @@ export default function TodoContent() {
   const [text, setText] = useState('');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [dueDate, setDueDate] = useState<string | undefined>();
+  /** Clearing has to be distinguishable from "never set", or the date parsed
+      out of the typed text would simply come back. */
+  const [dueCleared, setDueCleared] = useState(false);
   const [subjectId, setSubjectId] = useState<string | undefined>();
   const [filter, setFilter] = useState<string>('all');
   const [openId, setOpenId] = useState<string | null>(null);
@@ -69,6 +72,7 @@ export default function TodoContent() {
     setText('');
     setPriority(null);
     setDueDate(undefined);
+    setDueCleared(false);
     setSubjectId(undefined);
   }
 
@@ -82,7 +86,7 @@ export default function TodoContent() {
     .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
 
   const effPriority = priority ?? parsed.priority ?? 'medium';
-  const effDue = dueDate ?? parsed.dueDate;
+  const effDue = dueCleared ? undefined : dueDate ?? parsed.dueDate;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col page-body w-full">
@@ -116,7 +120,16 @@ export default function TodoContent() {
             </button>
           ))}
         </div>
-        <DateField value={effDue} onChange={setDueDate} placeholder="date" compact className="btn" />
+        <DateField
+          value={effDue}
+          onChange={(v) => {
+            setDueDate(v);
+            setDueCleared(v === undefined);
+          }}
+          placeholder="date"
+          compact
+          className="btn"
+        />
         {subjects.length > 0 && (
           <select
             value={subjectId ?? ''}

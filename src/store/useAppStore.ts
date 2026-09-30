@@ -63,9 +63,10 @@ export interface AppState {
 
   /** Free positions on the desk, keyed by card ('front' or a page key). */
   deskLayout: Record<string, { x: number; y: number; z: number }>;
-  setDeskPos: (key: string, pos: { x: number; y: number }) => void;
+  setDeskPos: (key: string, pos: { x: number; y: number; z?: number }) => void;
   /** `at` seeds x/y for a card that has never been moved, so raising it doesn't relocate it. */
-  bringDeskCardToFront: (key: string, at?: { x: number; y: number }) => void;
+  bringDeskCardToFront: (key: string, at?: { x: number; y: number; z?: number }) => void;
+  seedDeskLayout: (entries: [string, { x: number; y: number; z: number }][]) => void;
 
   deskGroups: DeskPageKey[][];
   openDeskPage: (key: DeskPageKey) => void;
@@ -215,12 +216,25 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           deskLayout: {
             ...s.deskLayout,
-            [key]: { ...pos, z: s.deskLayout[key]?.z ?? 1 },
+            [key]: { x: pos.x, y: pos.y, z: pos.z ?? s.deskLayout[key]?.z ?? 1 },
           },
         })),
+      // give every card a real place the first time the desk is laid out, so
+      // depth is comparable across all of them rather than only the moved ones
+      seedDeskLayout: (entries) =>
+        set((s) => {
+          const missing = entries.filter(([key]) => !s.deskLayout[key]);
+          if (missing.length === 0) return {};
+          const seeded = { ...s.deskLayout };
+          for (const [key, pos] of missing) seeded[key] = pos;
+          return { deskLayout: seeded };
+        }),
       bringDeskCardToFront: (key, at) =>
         set((s) => {
-          const maxZ = Object.values(s.deskLayout).reduce((m, c) => Math.max(m, c.z), 0);
+          const maxZ = Object.values(s.deskLayout).reduce(
+            (m, c) => Math.max(m, c.z),
+            at?.z ?? 0
+          );
           const cur = s.deskLayout[key];
           if (cur && cur.z === maxZ && maxZ > 0) return {};
           return {
